@@ -102,3 +102,32 @@ export async function createTestBoard(
   );
   return board;
 }
+
+/** Inserts messages straight into the database (fast setup for read-only views). */
+export async function insertMessages(
+  boardId: string,
+  messages: { author: string; body: string; hidden?: boolean }[],
+): Promise<void> {
+  if (messages.length === 0) return;
+  // One multi-row INSERT; createdAt is staggered to keep a stable order.
+  const values: unknown[] = [];
+  const rows = messages.map((m, i) => {
+    values.push(
+      `e2em${randomBytes(10).toString("hex")}`,
+      boardId,
+      m.author,
+      m.body,
+      m.hidden ?? false,
+      i,
+    );
+    const p = i * 6;
+    return `($${p + 1}, $${p + 2}, $${p + 3}, $${p + 4}, 'c1', $${p + 5}, now() + ($${p + 6} * interval '1 millisecond'), now())`;
+  });
+  await withDb((db) =>
+    db.query(
+      `INSERT INTO "Message" (id, "boardId", "authorName", body, "cardColor", hidden, "createdAt", "updatedAt")
+       VALUES ${rows.join(", ")}`,
+      values,
+    ),
+  );
+}

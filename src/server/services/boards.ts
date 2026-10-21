@@ -183,6 +183,14 @@ export function getBoardByShareSlug(shareSlug: string) {
   });
 }
 
+/** The recipient's view, reached only via the separate reveal link. */
+export function getBoardByRevealSlug(revealSlug: string) {
+  return db.board.findUnique({
+    where: { revealSlug },
+    select: PUBLIC_BOARD_SELECT,
+  });
+}
+
 export type PublicBoard = NonNullable<
   Awaited<ReturnType<typeof getBoardByShareSlug>>
 >;

@@ -8,8 +8,8 @@ then reveal it as an animated card or download it as a PDF.
 Tailwind CSS 4 + shadcn/ui · Framer Motion · Auth.js v5 (Google) · Prisma 7 +
 PostgreSQL · Zod · Vitest + Playwright.
 
-> Status: **Phase 3 (contributing: posting, guest edit/delete, image uploads,
-> rate limiting)** complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
+> Status: **Phase 4 (templates + recipient reveal view with animations)**
+> complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
 > for the full plan.
 
 ## Prerequisites
@@ -148,6 +148,16 @@ under Vercel's 4.5 MB request limit.
 - **Guest edits:** posting as a guest stores a random edit token in that
   browser; the database keeps only its SHA-256 hash.
 
+## Recipient view
+
+`/board/<revealSlug>/reveal` shows an opener (envelope, gift box or curtain,
+per template), then the title and every non-hidden message in a masonry grid
+with the template's entrance animation and ambient decorations (confetti,
+balloons, hearts, …). Clicking a card enlarges it (← / → to move, Esc to
+close). Large boards render in batches as you scroll. With the OS
+"reduce motion" setting, openers and entrances are skipped and decorations
+are frozen or left out.
+
 ## Testing
 
 - **Unit tests** (`pnpm test`): validation, slugs, redirects, and every
@@ -200,6 +210,7 @@ src/
     api/health/          DB connectivity check
     api/uploads/         image upload endpoint
     board/[slug]/        contribute page (share link)
+    board/[slug]/reveal/ recipient view (reveal link: opener, card wall, lightbox)
     files/[...key]/      serves locally stored uploads (dev)
   proxy.ts               bounces signed-out visitors away from /dashboard (cookie check only)
   components/
@@ -207,6 +218,7 @@ src/
     boards/              occasion/template pickers, visibility toggles
     dashboard/           owner dashboard pieces (share links, forms, moderation)
     messages/            message card, compose dialog, image upload, contribute board
+    reveal/              openers (envelope/gift box/curtain), decorations, grid, lightbox
     templates/           TemplatePreview (mini board rendered with a template)
     wizard/              the create-board wizard
   templates/

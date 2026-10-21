@@ -128,3 +128,92 @@
     @apply font-sans;
   }
 }
+
+/* ── Reveal decorations (src/components/reveal/decorations.tsx) ──────────── */
+/* Particles read per-element custom properties: --x, --y, --dur, --delay,
+   --drift, --spin. Movement uses `translate`/`rotate` so it composes with
+   any transform. */
+.ww-particle {
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  will-change: translate, rotate, opacity;
+  animation-duration: var(--dur);
+  animation-delay: var(--delay);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+.ww-fall {
+  animation-name: ww-fall;
+}
+.ww-rise {
+  animation-name: ww-rise;
+  animation-timing-function: ease-in-out;
+}
+.ww-twinkle {
+  top: var(--y);
+  animation-name: ww-twinkle;
+  animation-timing-function: ease-in-out;
+}
+.ww-glide {
+  left: 0;
+  top: var(--y);
+  animation-name: ww-glide;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes ww-fall {
+  from {
+    translate: 0 -12vh;
+    rotate: 0deg;
+  }
+  50% {
+    translate: var(--drift) 50vh;
+  }
+  to {
+    translate: 0 112vh;
+    rotate: var(--spin);
+  }
+}
+@keyframes ww-rise {
+  from {
+    translate: 0 110vh;
+    rotate: -6deg;
+  }
+  50% {
+    translate: var(--drift) 50vh;
+    rotate: 6deg;
+  }
+  to {
+    translate: 0 -25vh;
+    rotate: -6deg;
+  }
+}
+@keyframes ww-twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    scale: 0.6;
+  }
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes ww-glide {
+  from {
+    translate: -15vw 0;
+  }
+  50% {
+    translate: 50vw var(--drift);
+  }
+  to {
+    translate: 115vw 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-particle {
+    animation: none !important;
+  }
+}

@@ -105,6 +105,21 @@ export async function listMessagesForContributor(
   return rows.map((row) => toView(row, viewerId));
 }
 
+/**
+ * Everything on the board for the recipient's reveal: all non-hidden
+ * messages, whatever the surprise-mode setting (that only limits contributors).
+ */
+export async function listMessagesForReveal(
+  boardId: string,
+): Promise<MessageView[]> {
+  const rows = await db.message.findMany({
+    where: { boardId, hidden: false },
+    orderBy: { createdAt: "asc" },
+    select: MESSAGE_SELECT,
+  });
+  return rows.map((row) => toView(row));
+}
+
 /** A guest's own messages, proven by the tokens in their browser (for surprise mode). */
 export async function listMessagesByTokens(
   boardId: string,
