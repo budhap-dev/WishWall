@@ -83,10 +83,11 @@ async function fontsFor(
   return fonts;
 }
 
-// The same layered "sheet" shadow and light falloff the real cards use
-// (see .ww-sheet / .ww-paper in globals.css), in Satori-compatible form.
-const SHEET_SHADOW =
-  "0 2px 3px rgba(0,0,0,0.10), 0 10px 18px -4px rgba(0,0,0,0.16), 0 30px 44px -14px rgba(0,0,0,0.32)";
+// The real cards' "sheet" shadow and light falloff (see .ww-sheet / .ww-paper
+// in globals.css), in Satori-compatible form. One shadow layer, not the cards'
+// three: each blurred layer is slow to render (~2.6s on Vercel with three),
+// and WhatsApp shows no image when the image is that slow to arrive.
+const SHEET_SHADOW = "0 10px 18px -6px rgba(0,0,0,0.35)";
 const PAPER_LIGHT =
   "linear-gradient(165deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.04) 100%)";
 
