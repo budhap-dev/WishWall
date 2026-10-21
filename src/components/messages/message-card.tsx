@@ -14,13 +14,7 @@ import { StoredImage } from "./stored-image";
 type Props = {
   message: Pick<
     MessageView,
-    | "authorName"
-    | "body"
-    | "image"
-    | "cardColor"
-    | "edited"
-    | "font"
-    | "textColor"
+    "authorName" | "body" | "image" | "cardColor" | "font" | "textColor"
   >;
   template: TemplateConfig;
   /** Edit/delete controls for the author, rendered in the card's footer. */
@@ -73,11 +67,6 @@ export function MessageCard({
         <footer className="mt-3 flex items-end justify-between gap-2">
           <p className="text-[0.875em] font-semibold opacity-85">
             — {message.authorName}
-            {message.edited ? (
-              <span className="ml-1 text-[0.85em] font-normal opacity-70">
-                (edited)
-              </span>
-            ) : null}
           </p>
           {actions}
         </footer>

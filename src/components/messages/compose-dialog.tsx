@@ -244,7 +244,6 @@ function ComposeForm({
     cardColor,
     font,
     textColor: effectiveTextColor,
-    edited: false,
   };
 
   return (

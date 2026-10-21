@@ -40,7 +40,6 @@ const MESSAGE_SELECT = {
   textColor: true,
   hidden: true,
   createdAt: true,
-  updatedAt: true,
 } as const;
 
 type MessageRow = Prisma.MessageGetPayload<{ select: typeof MESSAGE_SELECT }>;
@@ -62,7 +61,6 @@ export type MessageView = {
   font: string | null;
   textColor: string | null;
   createdAt: string;
-  edited: boolean;
   /** True when the signed-in viewer wrote it (guests are matched client-side by token). */
   isMine: boolean;
 };
@@ -87,7 +85,6 @@ export function toView(row: MessageRow, viewerId?: string | null): MessageView {
     font: row.font,
     textColor: row.textColor,
     createdAt: row.createdAt.toISOString(),
-    edited: row.updatedAt.getTime() - row.createdAt.getTime() > 5_000,
     isMine: Boolean(viewerId && row.authorId === viewerId),
   };
 }
