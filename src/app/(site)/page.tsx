@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-// Placeholder landing page; sign-in and the create-board wizard arrive in Phase 2.
 export default function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-24 text-center">
@@ -15,8 +15,8 @@ export default function HomePage() {
         so friends can add messages, photos and GIFs, then reveal it as an
         animated card or download it as a PDF.
       </p>
-      <Button size="lg" disabled>
-        Create a board (coming soon)
+      <Button asChild size="lg">
+        <Link href="/dashboard/new">Create a board</Link>
       </Button>
     </main>
   );

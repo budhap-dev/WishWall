@@ -8,7 +8,8 @@ then reveal it as an animated card or download it as a PDF.
 Tailwind CSS 4 + shadcn/ui · Framer Motion · Auth.js v5 (Google) · Prisma 7 +
 PostgreSQL · Zod · Vitest + Playwright.
 
-> Status: **Phase 1 (project setup)** complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
+> Status: **Phase 2 (Google sign-in, create-board wizard, owner dashboard)**
+> complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
 > for the full plan.
 
 ## Prerequisites
@@ -66,7 +67,26 @@ docker compose up -d
 pnpm db:deploy        # applies prisma/migrations to the database
 ```
 
-### 4. Run
+### 4. Set up Google sign-in
+
+1. Generate `AUTH_SECRET`: `pnpm dlx auth secret` (or
+   `openssl rand -base64 32`) and put it in `.env`.
+2. In [Google Cloud Console](https://console.cloud.google.com), create a
+   project (e.g. "WishWall").
+3. **Google Auth Platform → Get started:** app name, support email, audience
+   **External**, contact email.
+4. **Audience → Test users:** add the Google accounts that will sign in while
+   the app is in testing mode. (Before launch, click **Publish app**; the
+   basic `openid email profile` scopes don't need Google verification.)
+5. **Clients → Create client → Web application:**
+   - Authorised JavaScript origin: `http://localhost:3000`
+   - Authorised redirect URI: `http://localhost:3000/api/auth/callback/google`
+   - For production, add your deployed URL in both lists too, e.g.
+     `https://wishwall.example.com` and
+     `https://wishwall.example.com/api/auth/callback/google`.
+6. Copy the client ID and secret into `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`.
+
+### 5. Run
 
 ```bash
 pnpm dev
@@ -75,9 +95,6 @@ pnpm dev
 Open <http://localhost:3000>. Check the database connection at
 <http://localhost:3000/api/health>; it should return
 `{"status":"ok","database":"ok"}`.
-
-The `AUTH_*` values in `.env` can stay as placeholders until Phase 2 adds
-Google sign-in.
 
 ## Scripts
 
@@ -90,10 +107,23 @@ Google sign-in.
 | `pnpm typecheck`   | Generate Next route types, then `tsc --noEmit`          |
 | `pnpm format`      | Prettier (writes); `pnpm format:check` to verify only   |
 | `pnpm test`        | Vitest unit tests (`pnpm test:watch` for watch mode)    |
+| `pnpm test:e2e`    | Playwright tests against a production build (see below) |
+| `pnpm clean`       | Delete `.next` (build output and dev cache)             |
 | `pnpm db:migrate`  | Create + apply a new migration after editing the schema |
 | `pnpm db:deploy`   | Apply pending migrations (CI / production)              |
 | `pnpm db:studio`   | Browse the database in Prisma Studio                    |
 | `pnpm db:generate` | Regenerate the Prisma client                            |
+
+## Testing
+
+- **Unit tests** (`pnpm test`): validation, slugs, redirects, and every
+  template (registered, complete palette, WCAG AA colour contrast).
+- **End-to-end tests** (`pnpm test:e2e`): build the app, start it on port 3100,
+  and drive Chromium (desktop and mobile). They need the database in `.env`;
+  point it at your **development** branch. Tests sign in by inserting a
+  throwaway user and session straight into the database (no Google round
+  trip), and delete everything they create. First run:
+  `pnpm exec playwright install chromium`.
 
 ## Environment variables
 
@@ -107,20 +137,42 @@ clear message instead of a runtime surprise.
 prisma/
   schema.prisma          database schema (Auth.js models + Board, Message, RateLimit)
   migrations/            SQL migrations (committed)
-prisma.config.ts         Prisma CLI config (connection URL, migrations path)
 src/
-  app/                   routes (App Router)
+  app/
+    (site)/              pages with the app header: landing, /signin, /dashboard/**
+    api/auth/            Auth.js routes (Google OAuth callback, session)
     api/health/          DB connectivity check
-  components/ui/         shadcn/ui primitives
-  generated/prisma/      generated Prisma client (git-ignored)
-  lib/                   shared helpers: env validation, slugs, utils
-  server/                server-only code: db client (more in later phases)
-tests/unit/              Vitest tests
+  proxy.ts               bounces signed-out visitors away from /dashboard (cookie check only)
+  components/
+    ui/                  shadcn/ui primitives
+    boards/              occasion/template pickers, visibility toggles
+    dashboard/           owner dashboard pieces (share links, forms, controls)
+    templates/           TemplatePreview (mini board rendered with a template)
+    wizard/              the create-board wizard
+  templates/
+    configs/             one file per template  ← add new templates here
+    index.ts             registry + lookups
+    fonts.ts, styles.ts  template fonts (next/font) and style helpers
+  lib/                   shared, client-safe: occasions, validation (Zod), formatting
+  server/                server-only
+    auth.ts, session.ts  Auth.js config; getCurrentUser/requireUser (data access layer)
+    services/            database logic; every owner query is scoped to the owner
+    actions/             Server Actions: re-check session, validate with Zod, call services
+tests/
+  unit/                  Vitest
+  e2e/                   Playwright
 ```
 
-Later phases add `src/templates/` (one config file per card template),
-`src/server/{actions,services,storage}`, and the `dashboard` / `board/[slug]`
-routes.
+### Adding a template
+
+1. Copy a file in `src/templates/configs/` (e.g. `birthday-confetti-pop.ts`),
+   give it a new `id` (= filename) and change the name, occasion, fonts and
+   colours. Fonts must be keys from `src/templates/fonts.ts`.
+2. Add it to the `TEMPLATES` list in `src/templates/index.ts`. The first
+   template listed for an occasion is that occasion's default.
+3. Run `pnpm test`: it fails if the file isn't registered, an id is
+   duplicated, a palette slot is missing, or any text/background pair is
+   below WCAG AA contrast.
 
 ## Notes
 
@@ -128,5 +180,9 @@ routes.
   `/board/*`, `/dashboard/*` and `/api/*` send `X-Robots-Tag: noindex`.
 - **Schema changes:** edit `prisma/schema.prisma`, then `pnpm db:migrate --name
 <change>`; commit the generated migration folder.
+- **Dev server stuck reloading** with "The server could not finish this
+  Suspense boundary" in the console: stop `pnpm dev`, run `pnpm clean`, and
+  start it again. Turbopack's dev cache in `.next/dev` occasionally serves
+  stale compiled code after many edits; production builds are unaffected.
 - **`AGENTS.md`** is maintained by Next.js (`next dev` re-creates it). It points
   coding agents at the docs bundled with the installed Next version.
