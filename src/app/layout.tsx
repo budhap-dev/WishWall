@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { BRAND_RED } from "@/lib/brand";
 import { env } from "@/lib/env";
 import "./globals.css";
 
@@ -29,7 +30,12 @@ export const metadata: Metadata = {
   },
   description:
     "Create a board for a birthday, farewell or any occasion, invite everyone to add a message, then reveal it as a beautiful animated card.",
+  // Home-screen app on iOS: full screen, named "WishWall" under the icon.
+  appleWebApp: { capable: true, title: "WishWall", statusBarStyle: "default" },
 };
+
+// Colours the phone's status bar / browser toolbar.
+export const viewport: Viewport = { themeColor: BRAND_RED };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
