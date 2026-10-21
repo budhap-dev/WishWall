@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 
 // App chrome for the marketing page, sign-in and the owner dashboard. Board
@@ -8,6 +9,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
     <>
       <SiteHeader />
       {children}
+      <SiteFooter />
     </>
   );
 }

@@ -28,6 +28,23 @@ function initials(name: string | null, email: string | null) {
     .join("");
 }
 
+/** The signed-in user's Google photo, or their initials. */
+export function UserAvatar({
+  name,
+  email,
+  image,
+  className = "size-8",
+}: Props & { className?: string }) {
+  return (
+    <Avatar className={className}>
+      {image ? (
+        <AvatarImage src={image} alt="" referrerPolicy="no-referrer" />
+      ) : null}
+      <AvatarFallback>{initials(name, email)}</AvatarFallback>
+    </Avatar>
+  );
+}
+
 export function UserMenu({ name, email, image }: Props) {
   return (
     <DropdownMenu>
@@ -35,12 +52,7 @@ export function UserMenu({ name, email, image }: Props) {
         className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         aria-label="Account menu"
       >
-        <Avatar className="size-8">
-          {image ? (
-            <AvatarImage src={image} alt="" referrerPolicy="no-referrer" />
-          ) : null}
-          <AvatarFallback>{initials(name, email)}</AvatarFallback>
-        </Avatar>
+        <UserAvatar name={name} email={email} image={image} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
