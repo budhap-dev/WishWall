@@ -200,8 +200,14 @@ region `lhr1` next to the Neon database in London).
   `APP_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and
   `ENABLE_EXPERIMENTAL_COREPACK=1` (so Vercel builds with the pnpm version
   pinned in `package.json`).
-- **Deploy:** `pnpm dlx vercel deploy --prod` from the repo root.
-  `.vercelignore` keeps `.env` and build output from being uploaded.
+- **Deploy:** automatic. The Vercel project is connected to this GitHub repo,
+  so every merge to `main` deploys to production. Apply any migrations
+  (above) before merging. To deploy by hand, run `pnpm dlx vercel deploy --prod`
+  from the repo root; `.vercelignore` keeps `.env` and build output from being
+  uploaded.
+- **Preview deploys:** Vercel also builds each PR branch, but the environment
+  variables are set for Production only, so previews have no database or
+  sign-in yet.
 - The build script runs `prisma generate` itself, because Vercel's dependency
   cache can skip `postinstall`.
 
