@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { BoardStatus } from "@/generated/prisma/enums";
 import { generateSlug } from "@/lib/slug";
 import type {
@@ -176,19 +177,19 @@ const PUBLIC_BOARD_SELECT = {
   messagesVisible: true,
 } as const;
 
-export function getBoardByShareSlug(shareSlug: string) {
-  return db.board.findUnique({
-    where: { shareSlug },
-    select: PUBLIC_BOARD_SELECT,
-  });
-}
+// cache(): metadata, the link-preview image and the page share one query per request.
+export const getBoardByShareSlug = cache((shareSlug: string) =>
+  db.board.findUnique({ where: { shareSlug }, select: PUBLIC_BOARD_SELECT }),
+);
 
 /** The recipient's view, reached only via the separate reveal link. */
-export function getBoardByRevealSlug(revealSlug: string) {
-  return db.board.findUnique({
-    where: { revealSlug },
-    select: PUBLIC_BOARD_SELECT,
-  });
+export const getBoardByRevealSlug = cache((revealSlug: string) =>
+  db.board.findUnique({ where: { revealSlug }, select: PUBLIC_BOARD_SELECT }),
+);
+
+/** Non-hidden message count, for link previews. */
+export function countVisibleMessages(boardId: string) {
+  return db.message.count({ where: { boardId, hidden: false } });
 }
 
 export type PublicBoard = NonNullable<

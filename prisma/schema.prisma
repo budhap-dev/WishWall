@@ -132,6 +132,10 @@ model Message {
   // A palette key from the board's template (e.g. "rose"), not a hex value,
   // so cards re-colour sensibly when the owner switches template.
   cardColor     String   @db.VarChar(32)
+  // Contributor's styling choices: ids from src/lib/message-style.ts
+  // (e.g. "handwritten", "blue"); null means the template's own.
+  font          String?  @db.VarChar(20)
+  textColor     String?  @db.VarChar(20)
   hidden        Boolean  @default(false)
   // SHA-256 of the guest's edit token. The raw token only lives in the guest's
   // browser, so a database leak can't be used to edit or delete messages.

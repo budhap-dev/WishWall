@@ -16,6 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveEditToken, saveGuestName } from "@/lib/client/edit-tokens";
+import {
+  isFontId,
+  isTextColorId,
+  isTextColorReadable,
+  MESSAGE_FONT_IDS,
+  MESSAGE_FONTS,
+  type MessageFontId,
+  TEXT_COLOR_IDS,
+  TEXT_COLORS,
+  type TextColorId,
+} from "@/lib/message-style";
 import { cn } from "@/lib/utils";
 import { MESSAGE_LIMITS } from "@/lib/validation/message";
 import {
@@ -28,6 +39,7 @@ import {
   type CardColorKey,
   type TemplateConfig,
 } from "@/templates";
+import { fontFamily } from "@/templates/fonts";
 import { cardColorKey } from "@/templates/styles";
 import { type ImageValue, ImageUploadField } from "./image-upload-field";
 import { MessageCard } from "./message-card";
@@ -102,6 +114,17 @@ function ComposeForm({
   const [cardColor, setCardColor] = useState<CardColorKey>(
     cardColorKey(template, editing?.cardColor),
   );
+  const [font, setFont] = useState<MessageFontId | null>(
+    isFontId(editing?.font) ? editing.font : null,
+  );
+  const [textColor, setTextColor] = useState<TextColorId | null>(
+    isTextColorId(editing?.textColor) ? editing.textColor : null,
+  );
+  // A colour that isn't readable on the current card colour counts as "default".
+  const effectiveTextColor =
+    textColor && isTextColorReadable(template, cardColor, textColor)
+      ? textColor
+      : null;
   const [image, setImage] = useState<ImageValue | null>(
     editing?.image ? { ...editing.image, token: "" } : null,
   );
@@ -154,6 +177,8 @@ function ComposeForm({
       authorName,
       body,
       cardColor,
+      font,
+      textColor: effectiveTextColor,
       image: image
         ? {
             key: image.key,
@@ -217,6 +242,8 @@ function ComposeForm({
         }
       : null,
     cardColor,
+    font,
+    textColor: effectiveTextColor,
     edited: false,
   };
 
@@ -335,6 +362,93 @@ function ComposeForm({
                       className="sr-only"
                     />
                     <span className="sr-only">{color.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium">Font</legend>
+            <div className="flex flex-wrap gap-2">
+              {([null, ...MESSAGE_FONT_IDS] as const).map((id) => (
+                <label
+                  key={id ?? "default"}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm has-checked:border-foreground has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                >
+                  <input
+                    type="radio"
+                    name="font"
+                    checked={font === id}
+                    onChange={() => setFont(id)}
+                    className="sr-only"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="text-base leading-none"
+                    style={{
+                      fontFamily: fontFamily(
+                        id ? MESSAGE_FONTS[id].font : template.fonts.body,
+                      ),
+                      fontSize: id ? `${MESSAGE_FONTS[id].scale}em` : undefined,
+                    }}
+                  >
+                    Aa
+                  </span>
+                  {id ? MESSAGE_FONTS[id].label : "Default"}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium">Text colour</legend>
+            <div className="flex flex-wrap gap-2">
+              {([null, ...TEXT_COLOR_IDS] as const).map((id) => {
+                const readable =
+                  id === null || isTextColorReadable(template, cardColor, id);
+                const hex = id
+                  ? TEXT_COLORS[id].hex
+                  : template.cards.palette[cardColor].text;
+                const label = id ? TEXT_COLORS[id].label : "Default";
+                return (
+                  <label
+                    key={id ?? "default"}
+                    title={
+                      readable
+                        ? label
+                        : `${label} isn't readable on this card colour`
+                    }
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-full border-2 border-transparent ring-offset-2 has-checked:border-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring",
+                      readable
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-35",
+                    )}
+                    style={{
+                      backgroundColor:
+                        template.cards.palette[cardColor].background,
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="textColor"
+                      checked={effectiveTextColor === id}
+                      disabled={!readable}
+                      onChange={() => setTextColor(id)}
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="text-lg font-bold"
+                      style={{ color: hex }}
+                    >
+                      A
+                    </span>
+                    <span className="sr-only">
+                      {label}
+                      {readable ? "" : " (not readable on this card colour)"}
+                    </span>
                   </label>
                 );
               })}

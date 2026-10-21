@@ -57,7 +57,7 @@ export function CardLightbox({
             <MessageCard
               message={message}
               template={template}
-              className="p-6 text-lg sm:p-8 [&_p]:text-lg"
+              className="p-6 text-xl sm:p-8"
             />
             {messages.length > 1 ? (
               <div className="mt-4 flex items-center justify-center gap-3">

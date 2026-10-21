@@ -16,7 +16,7 @@ test("the recipient opens the card and sees every visible message", async ({
   ]);
 
   await page.goto(`/board/${board.revealSlug}/reveal`);
-  await expect(page.getByText("A card for")).toBeVisible();
+  await expect(page.getByText("A card for", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Happy Birthday, Maya!" }),
   ).toHaveCount(0);

@@ -1,4 +1,11 @@
 import type { CSSProperties } from "react";
+import {
+  isFontId,
+  isTextColorId,
+  isTextColorReadable,
+  MESSAGE_FONTS,
+  TEXT_COLORS,
+} from "@/lib/message-style";
 import { fontFamily } from "./fonts";
 import {
   CARD_COLOR_KEYS,
@@ -55,3 +62,31 @@ export const CARD_STYLE_CLASSES: Record<CardStyle, string> = {
     "bg-clip-padding opacity-95 shadow-xl shadow-black/30 ring-1 ring-white/30",
   outline: "border-2 border-current",
 };
+
+/**
+ * Font and colour for a message's own text choices. Falls back to the
+ * template's text colour if the chosen one isn't readable on this card (e.g.
+ * after the owner switched template).
+ */
+export function messageTextStyle(
+  t: TemplateConfig,
+  message: {
+    cardColor: string;
+    font?: string | null;
+    textColor?: string | null;
+  },
+): CSSProperties {
+  const style: CSSProperties = {};
+  if (isFontId(message.font)) {
+    const choice = MESSAGE_FONTS[message.font];
+    style.fontFamily = fontFamily(choice.font);
+    style.fontSize = `${choice.scale}em`;
+  }
+  if (
+    isTextColorId(message.textColor) &&
+    isTextColorReadable(t, message.cardColor, message.textColor)
+  ) {
+    style.color = TEXT_COLORS[message.textColor].hex;
+  }
+  return style;
+}

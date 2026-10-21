@@ -36,6 +36,8 @@ const MESSAGE_SELECT = {
   imageWidth: true,
   imageHeight: true,
   cardColor: true,
+  font: true,
+  textColor: true,
   hidden: true,
   createdAt: true,
   updatedAt: true,
@@ -57,6 +59,8 @@ export type MessageView = {
     alt: string;
   } | null;
   cardColor: string;
+  font: string | null;
+  textColor: string | null;
   createdAt: string;
   edited: boolean;
   /** True when the signed-in viewer wrote it (guests are matched client-side by token). */
@@ -80,6 +84,8 @@ export function toView(row: MessageRow, viewerId?: string | null): MessageView {
           }
         : null,
     cardColor: row.cardColor,
+    font: row.font,
+    textColor: row.textColor,
     createdAt: row.createdAt.toISOString(),
     edited: row.updatedAt.getTime() - row.createdAt.getTime() > 5_000,
     isMine: Boolean(viewerId && row.authorId === viewerId),
@@ -277,6 +283,8 @@ function contentToColumns(content: MessageContentData) {
     authorName: content.authorName,
     body: content.body ?? "",
     cardColor: content.cardColor,
+    font: content.font,
+    textColor: content.textColor,
     imageKey: content.image?.key ?? null,
     imageAlt: content.image ? content.image.alt || null : null,
     imageWidth: content.image?.width ?? null,

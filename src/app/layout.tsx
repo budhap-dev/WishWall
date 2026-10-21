@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,6 +21,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  // Makes og:image and other metadata URLs absolute, as link previews require.
+  metadataBase: new URL(env.APP_URL),
   title: {
     default: "WishWall — group cards for the people you love",
     template: "%s · WishWall",

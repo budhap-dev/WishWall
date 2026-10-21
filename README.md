@@ -148,6 +148,24 @@ under Vercel's 4.5 MB request limit.
 - **Guest edits:** posting as a guest stores a random edit token in that
   browser; the database keeps only its SHA-256 hash.
 
+## Link previews
+
+Board links unfurl as rich cards in WhatsApp, iMessage, Slack and others:
+`generateMetadata` sets `og:` / `twitter:` tags and `opengraph-image.tsx`
+draws a 1200×630 image in the board's template (title, recipient, "Add your
+message"). The recipient's link previews as a sealed envelope, without the
+board title. `metadataBase` comes from `APP_URL`, so set it to the public URL.
+Messaging apps cache previews per link.
+
+## Message styling
+
+Contributors can pick a font (Handwritten, Marker, Script, Serif, Rounded,
+Playful, or the template's) and a text colour. Colours that aren't readable
+(WCAG AA) on the chosen card colour are disabled, and if a stored colour stops
+being readable (e.g. the owner switches template) the card falls back to the
+template's text colour. Choices are stored as ids defined in
+`src/lib/message-style.ts`.
+
 ## Recipient view
 
 `/board/<revealSlug>/reveal` shows an opener (envelope, gift box or curtain,

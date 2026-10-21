@@ -2,14 +2,24 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { MessageView } from "@/server/services/messages";
 import type { TemplateConfig } from "@/templates";
-import { CARD_STYLE_CLASSES, cardStyle } from "@/templates/styles";
+import {
+  CARD_STYLE_CLASSES,
+  cardStyle,
+  messageTextStyle,
+} from "@/templates/styles";
 import { RichText } from "./rich-text";
 import { StoredImage } from "./stored-image";
 
 type Props = {
   message: Pick<
     MessageView,
-    "authorName" | "body" | "image" | "cardColor" | "edited"
+    | "authorName"
+    | "body"
+    | "image"
+    | "cardColor"
+    | "edited"
+    | "font"
+    | "textColor"
   >;
   template: TemplateConfig;
   /** Edit/delete controls for the author, rendered in the card's footer. */
@@ -38,23 +48,27 @@ export function MessageCard({ message, template, actions, className }: Props) {
           className="mb-3 h-auto w-full rounded-[inherit]"
         />
       ) : null}
-      {message.body ? (
-        <RichText
-          text={message.body}
-          className="text-[0.95rem] leading-relaxed break-words"
-        />
-      ) : null}
-      <footer className="mt-3 flex items-end justify-between gap-2">
-        <p className="text-sm font-semibold opacity-85">
-          — {message.authorName}
-          {message.edited ? (
-            <span className="ml-1 text-xs font-normal opacity-70">
-              (edited)
-            </span>
-          ) : null}
-        </p>
-        {actions}
-      </footer>
+      {/* Text sizes are relative (em) so a chosen font's scale and the
+          lightbox's larger size both carry through. */}
+      <div style={messageTextStyle(template, message)}>
+        {message.body ? (
+          <RichText
+            text={message.body}
+            className="text-[0.95em] leading-relaxed break-words"
+          />
+        ) : null}
+        <footer className="mt-3 flex items-end justify-between gap-2">
+          <p className="text-[0.875em] font-semibold opacity-85">
+            — {message.authorName}
+            {message.edited ? (
+              <span className="ml-1 text-[0.85em] font-normal opacity-70">
+                (edited)
+              </span>
+            ) : null}
+          </p>
+          {actions}
+        </footer>
+      </div>
     </article>
   );
 }

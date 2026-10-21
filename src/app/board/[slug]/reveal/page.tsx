@@ -8,10 +8,32 @@ import { getBoardByRevealSlug } from "@/server/services/boards";
 import { listMessagesForReveal } from "@/server/services/messages";
 import { imageUrl } from "@/server/storage";
 
-export const metadata: Metadata = {
-  title: "You've got a card!",
-  robots: { index: false, follow: false },
-};
+const robots = { index: false, follow: false };
+
+/** Link-preview text for the recipient's link: no spoilers, just who it's for. */
+export async function generateMetadata({
+  params,
+}: PageProps<"/board/[slug]/reveal">): Promise<Metadata> {
+  const { slug } = await params;
+  const board = isValidSlug(slug) ? await getBoardByRevealSlug(slug) : null;
+  if (!board) return { title: "Card not found", robots };
+
+  const title = `A card for ${board.recipientName} 💌`;
+  const description = "Friends and family made you something. Tap to open it.";
+  return {
+    title,
+    description,
+    robots,
+    openGraph: {
+      type: "website",
+      siteName: "WishWall",
+      title,
+      description,
+      url: `/board/${slug}/reveal`,
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 /**
  * The recipient's view, reached only via the board's reveal link (a different

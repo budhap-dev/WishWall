@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MESSAGE_FONT_IDS, TEXT_COLOR_IDS } from "@/lib/message-style";
 import { CARD_COLOR_KEYS } from "@/templates/types";
 import { multiLine, singleLine } from "./common";
 
@@ -28,6 +29,9 @@ export const messageContentSchema = z
     authorName: singleLine(MESSAGE_LIMITS.authorName, "Your name"),
     body: multiLine(MESSAGE_LIMITS.body, "Message"),
     cardColor: z.enum(CARD_COLOR_KEYS),
+    /** null = the template's font / text colour. */
+    font: z.enum(MESSAGE_FONT_IDS).nullable().default(null),
+    textColor: z.enum(TEXT_COLOR_IDS).nullable().default(null),
     /** null removes an existing image when editing. */
     image: imageWithAlt.nullable(),
   })

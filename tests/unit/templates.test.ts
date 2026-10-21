@@ -2,26 +2,10 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { Occasion } from "@/generated/prisma/enums";
+import { contrastRatio } from "@/lib/color";
 import { CARD_COLOR_KEYS, TEMPLATES, templatesFor } from "@/templates";
 
-// WCAG 2.x relative luminance / contrast ratio for #rrggbb colours.
-function luminance(hex: string): number {
-  const channels = hex
-    .replace("#", "")
-    .match(/../g)!
-    .map((c) => parseInt(c, 16) / 255)
-    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  const [r, g, b] = channels as [number, number, number];
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [
-    number,
-    number,
-  ];
-  return (hi + 0.05) / (lo + 0.05);
-}
+const contrast = contrastRatio;
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
