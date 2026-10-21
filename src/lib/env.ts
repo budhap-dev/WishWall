@@ -49,6 +49,9 @@ const serverSchema = z
     // Cloudflare Turnstile for guest posts
     CAPTCHA_ENABLED: booleanFlag,
     TURNSTILE_SECRET_KEY: z.string().optional(),
+
+    // Dev-only "Continue as demo user" sign-in (ignored outside `next dev`).
+    DEV_LOGIN: booleanFlag,
   })
   .superRefine((e, ctx) => {
     if (

@@ -11,7 +11,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeRedirectPath } from "@/lib/safe-redirect";
-import { signInWithGoogleAction } from "@/server/actions/auth";
+import {
+  signInAsDemoUserAction,
+  signInWithGoogleAction,
+} from "@/server/actions/auth";
+import { isDevLoginEnabled } from "@/server/dev-login";
 import { getCurrentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -74,6 +78,22 @@ async function SignInForm({
         <GoogleIcon />
         Continue with Google
       </Button>
+      {isDevLoginEnabled() ? (
+        <div className="space-y-2 border-t pt-4">
+          <Button
+            type="submit"
+            formAction={signInAsDemoUserAction}
+            size="lg"
+            variant="secondary"
+            className="w-full"
+          >
+            Continue as demo user
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Development only (DEV_LOGIN=true). Never shown in production.
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }

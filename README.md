@@ -125,6 +125,28 @@ Open <http://localhost:3000>. Check the database connection at
   trip), and delete everything they create. First run:
   `pnpm exec playwright install chromium`.
 
+## Deployment (Vercel + Neon)
+
+Production: <https://wishwall-psi.vercel.app> (Vercel project `wishwall`,
+region `lhr1` next to the Neon database in London).
+
+- **Database:** the Neon `production` branch. Apply migrations before deploying
+  a schema change, using that branch's direct connection string:
+  `DIRECT_URL="postgresql://…" pnpm db:deploy`.
+- **Environment variables** (Vercel → Project → Settings → Environment
+  Variables, Production): `DATABASE_URL` (Neon production, pooled),
+  `APP_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and
+  `ENABLE_EXPERIMENTAL_COREPACK=1` (so Vercel builds with the pnpm version
+  pinned in `package.json`).
+- **Deploy:** `pnpm dlx vercel deploy --prod` from the repo root.
+  `.vercelignore` keeps `.env` and build output from being uploaded.
+- The build script runs `prisma generate` itself, because Vercel's dependency
+  cache can skip `postinstall`.
+
+Local-only demo sign-in: set `DEV_LOGIN="true"` in `.env` to get a
+"Continue as demo user" button on `/signin` under `pnpm dev`. It is ignored
+by production builds.
+
 ## Environment variables
 
 Every variable is documented in [.env.example](.env.example) and validated at
