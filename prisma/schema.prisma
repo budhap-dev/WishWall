@@ -1,0 +1,158 @@
+// WishWall database schema.
+// Templates are NOT stored here: they are typed config in src/templates/, and
+// boards reference them by `templateId` (validated in application code).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The connection URL lives in prisma.config.ts (Prisma 7+).
+datasource db {
+  provider = "postgresql"
+}
+
+enum Occasion {
+  BIRTHDAY
+  ANNIVERSARY
+  FAREWELL
+  MISS_YOU
+  CONGRATULATIONS
+  GET_WELL_SOON
+  THANK_YOU
+  WELCOME
+}
+
+enum BoardStatus {
+  OPEN // accepting new messages
+  CLOSED // read-only for contributors
+}
+
+// ─── Auth.js (NextAuth v5) adapter models ───────────────────────────────────
+// Field names follow @auth/prisma-adapter; don't rename them.
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  boards        Board[]
+  messages      Message[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── App models ─────────────────────────────────────────────────────────────
+
+model Board {
+  id                String      @id @default(cuid())
+  ownerId           String
+  owner             User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  // Long random strings (see src/lib/slug.ts). shareSlug is the contribute
+  // link; revealSlug is the recipient-only link (no "Add a message" UI, and it
+  // shows every message even in surprise mode).
+  shareSlug         String      @unique
+  revealSlug        String      @unique
+  recipientName     String      @db.VarChar(80)
+  recipientPhotoKey String? // storage key; the storage adapter resolves it to a URL
+  occasion          Occasion
+  title             String      @db.VarChar(120)
+  intro             String?     @db.VarChar(1000)
+  templateId        String      @db.VarChar(64)
+  theme             Json? // optional overrides { palette?, font? }, Zod-validated in app
+  eventDate         DateTime?   @db.Date
+  status            BoardStatus @default(OPEN)
+  // Visibility settings
+  allowGuests       Boolean     @default(true) // false = contributors must sign in
+  messagesVisible   Boolean     @default(true) // false = "surprise mode": contributors see only their own
+  messages          Message[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([ownerId, createdAt])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  boardId       String
+  board         Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  authorName    String   @db.VarChar(60)
+  authorId      String?
+  author        User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  // Plain text with a tiny markdown subset (**bold**, _italic_). Never HTML:
+  // it's rendered to React nodes, so there is nothing to inject.
+  body          String   @db.VarChar(1000)
+  imageKey      String? // storage key for an uploaded image/GIF
+  imageAlt      String?  @db.VarChar(200)
+  // Stored so next/image and the masonry grid can reserve space (no layout shift).
+  imageWidth    Int?
+  imageHeight   Int?
+  // A palette key from the board's template (e.g. "rose"), not a hex value,
+  // so cards re-colour sensibly when the owner switches template.
+  cardColor     String   @db.VarChar(32)
+  // Contributor's styling choices: ids from src/lib/message-style.ts
+  // (e.g. "handwritten", "blue"); null means the template's own.
+  font          String?  @db.VarChar(20)
+  textColor     String?  @db.VarChar(20)
+  hidden        Boolean  @default(false)
+  // SHA-256 of the guest's edit token. The raw token only lives in the guest's
+  // browser, so a database leak can't be used to edit or delete messages.
+  editTokenHash String?  @db.Char(64)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([boardId, hidden, createdAt])
+  @@index([authorId])
+}
+
+// Fixed-window rate-limit counters. Kept in Postgres so limits hold across
+// serverless instances without needing Redis.
+model RateLimit {
+  key     String   @id // e.g. "msg:ip:<hashed ip>" or "msg:board:<boardId>"
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

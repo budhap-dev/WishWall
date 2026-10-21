@@ -1,0 +1,23 @@
+# Optional local Postgres, for development without a Neon database.
+#   docker compose up -d
+#   DATABASE_URL="postgresql://wishwall:wishwall@localhost:5432/wishwall"
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wishwall
+      POSTGRES_PASSWORD: wishwall
+      POSTGRES_DB: wishwall
+    ports:
+      - "5432:5432"
+    volumes:
+      - wishwall-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wishwall -d wishwall"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  wishwall-pg:
