@@ -47,6 +47,8 @@ type Props = {
   messages: MessageView[];
   template: TemplateConfig;
   reducedMotion: boolean;
+  /** Render every message at once (printing) instead of in batches. */
+  showAll?: boolean;
   onOpenCard: (index: number) => void;
 };
 
@@ -58,9 +60,11 @@ export function RevealGrid({
   messages,
   template,
   reducedMotion,
+  showAll = false,
   onOpenCard,
 }: Props) {
-  const [visible, setVisible] = useState(Math.min(BATCH, messages.length));
+  const [batched, setBatched] = useState(Math.min(BATCH, messages.length));
+  const visible = showAll ? messages.length : batched;
   const sentinel = useRef<HTMLDivElement>(null);
   const variant = ENTRANCES[template.entrance];
 
@@ -70,7 +74,7 @@ export function RevealGrid({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          setVisible((v) => Math.min(v + BATCH, messages.length));
+          setBatched((v) => Math.min(v + BATCH, messages.length));
         }
       },
       { rootMargin: "800px 0px" },
@@ -93,7 +97,7 @@ export function RevealGrid({
           return (
             <motion.li
               key={message.id}
-              className="relative mb-5 break-inside-avoid"
+              className="ww-print-visible relative mb-5 break-inside-avoid"
               initial={reducedMotion ? false : variant.initial}
               animate={variant.animate}
               transition={{ ...variant.transition, delay }}
@@ -118,7 +122,7 @@ export function RevealGrid({
       {visible < messages.length ? (
         <div
           ref={sentinel}
-          className="py-8 text-center text-sm opacity-70"
+          className="py-8 text-center text-sm opacity-70 print:hidden"
           aria-live="polite"
         >
           Loading more messages…

@@ -22,6 +22,8 @@ type Props = {
   className?: string;
   /** Tilt the card a little, as if placed by hand (stable per seed, e.g. message id). */
   tiltSeed?: string;
+  /** Load the image right away rather than when scrolled near (print). */
+  eagerImage?: boolean;
 };
 
 /** One message, drawn in the board template's card style. */
@@ -31,6 +33,7 @@ export function MessageCard({
   actions,
   className,
   tiltSeed,
+  eagerImage,
 }: Props) {
   return (
     <article
@@ -53,6 +56,7 @@ export function MessageCard({
           height={message.image.height}
           sizes="(min-width: 1280px) 22rem, (min-width: 640px) 45vw, 90vw"
           className="mb-3 h-auto w-full rounded-[inherit]"
+          priority={eagerImage}
         />
       ) : null}
       {/* Text sizes are relative (em) so a chosen font's scale and the

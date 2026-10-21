@@ -21,3 +21,16 @@ export function pluralize(
 ) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+/** "12 messages from 9 people · 3 Mar 2026", from each message's author name. */
+export function boardSummary(
+  authorNames: string[],
+  eventDateLabel: string | null,
+): string {
+  const people = new Set(authorNames.map((n) => n.trim().toLowerCase())).size;
+  const messages =
+    authorNames.length > 0
+      ? `${pluralize(authorNames.length, "message")} from ${pluralize(people, "person", "people")}`
+      : "No messages yet";
+  return eventDateLabel ? `${messages} · ${eventDateLabel}` : messages;
+}

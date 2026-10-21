@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // The PDF route reads these files at runtime by path, which tracing can't
+  // see: serverless Chromium's compressed binaries and the emoji font.
+  outputFileTracingIncludes: {
+    "/board/\\[slug\\]/pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+      "./src/server/fonts/**",
+    ],
+  },
   // Keep boards out of search engines even if a link gets posted publicly.
   async headers() {
     return [

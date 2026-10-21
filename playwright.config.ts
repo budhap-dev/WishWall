@@ -44,6 +44,7 @@ export default defineConfig({
       // per-board limit is low so one test can prove rate limiting works.
       RATE_LIMIT_PER_IP: "10000",
       RATE_LIMIT_UPLOADS_PER_IP: "10000",
+      RATE_LIMIT_PDF_PER_IP: "10000",
       RATE_LIMIT_PER_BOARD: "5",
     },
   },

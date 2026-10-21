@@ -8,8 +8,7 @@ then reveal it as an animated card or download it as a PDF.
 Tailwind CSS 4 + shadcn/ui · Framer Motion · Auth.js v5 (Google) · Prisma 7 +
 PostgreSQL · Zod · Vitest + Playwright.
 
-> Status: **Phase 4 (templates + recipient reveal view with animations)**
-> complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
+> Status: **Phase 5 (PDF export + print CSS)** complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
 > for the full plan.
 
 ## Prerequisites
@@ -176,6 +175,30 @@ close). Large boards render in batches as you scroll. With the OS
 "reduce motion" setting, openers and entrances are skipped and decorations
 are frozen or left out.
 
+## PDF export
+
+"Download PDF" (on the recipient's view and the owner dashboard) offers A4 or
+US Letter. `GET /board/<revealSlug>/pdf?paper=a4|letter` opens
+`/board/<revealSlug>/print` in headless Chromium (Playwright) and prints it:
+a cover page with the recipient, title and template art, then every message
+in two columns, never split across pages. Only the reveal link works, so
+contributors can't download a surprise-mode board. Downloads are limited per
+IP (`RATE_LIMIT_PDF_PER_IP`, default 20 an hour), since each one runs a
+browser.
+
+- **Locally** it uses Playwright's Chromium:
+  `pnpm exec playwright install chromium` (the same one the end-to-end tests
+  use). The browser loads the print page from `APP_URL`, so that must be the
+  address the app is running on.
+- **On Vercel** it uses `@sparticuz/chromium`, a Chromium build small enough
+  for a serverless function. It has no emoji font, so
+  `src/server/fonts/NotoColorEmoji.ttf` (Google's Noto Color Emoji, SIL Open
+  Font License) is bundled with the function and installed before launch.
+  `next.config.ts` lists both for file tracing.
+
+The browser's own Print also works: on the reveal page it opens the card,
+renders every message and hides the buttons and animations.
+
 ## Testing
 
 - **Unit tests** (`pnpm test`): validation, slugs, redirects, and every
@@ -197,7 +220,8 @@ region `lhr1` next to the Neon database in London).
   `DIRECT_URL="postgresql://…" pnpm db:deploy`.
 - **Environment variables** (Vercel → Project → Settings → Environment
   Variables, Production): `DATABASE_URL` (Neon production, pooled),
-  `APP_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and
+  `APP_URL` (also where the PDF renderer loads boards from), `AUTH_SECRET`,
+  `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and
   `ENABLE_EXPERIMENTAL_COREPACK=1` (so Vercel builds with the pnpm version
   pinned in `package.json`).
 - **Deploy:** automatic. The Vercel project is connected to this GitHub repo,
@@ -235,6 +259,8 @@ src/
     api/uploads/         image upload endpoint
     board/[slug]/        contribute page (share link)
     board/[slug]/reveal/ recipient view (reveal link: opener, card wall, lightbox)
+    board/[slug]/print/  printable board (reveal link), rendered to PDF by …
+    board/[slug]/pdf/    … this route (headless Chromium)
     files/[...key]/      serves locally stored uploads (dev)
   proxy.ts               bounces signed-out visitors away from /dashboard (cookie check only)
   components/
@@ -242,7 +268,8 @@ src/
     boards/              occasion/template pickers, visibility toggles
     dashboard/           owner dashboard pieces (share links, forms, moderation)
     messages/            message card, compose dialog, image upload, contribute board
-    reveal/              openers (envelope/gift box/curtain), decorations, grid, lightbox
+    reveal/              openers (envelope/gift box/curtain), decorations, grid, lightbox, PDF button
+    print/               the board laid out as printed pages
     templates/           TemplatePreview (mini board rendered with a template)
     wizard/              the create-board wizard
   templates/
@@ -256,6 +283,8 @@ src/
     storage/             StorageAdapter + local disk and Cloudinary drivers
     images.ts            upload validation and re-encoding (sharp)
     rate-limit.ts        Postgres fixed-window rate limiter
+    pdf.ts               launches headless Chromium and prints a page to PDF
+    fonts/               emoji font for serverless Chromium
     actions/             Server Actions: re-check session, validate with Zod, call services
 tests/
   unit/                  Vitest
