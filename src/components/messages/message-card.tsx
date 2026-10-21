@@ -5,6 +5,7 @@ import type { TemplateConfig } from "@/templates";
 import {
   CARD_STYLE_CLASSES,
   cardStyle,
+  cardTilt,
   messageTextStyle,
 } from "@/templates/styles";
 import { RichText } from "./rich-text";
@@ -25,10 +26,18 @@ type Props = {
   /** Edit/delete controls for the author, rendered in the card's footer. */
   actions?: ReactNode;
   className?: string;
+  /** Tilt the card a little, as if placed by hand (stable per seed, e.g. message id). */
+  tiltSeed?: string;
 };
 
 /** One message, drawn in the board template's card style. */
-export function MessageCard({ message, template, actions, className }: Props) {
+export function MessageCard({
+  message,
+  template,
+  actions,
+  className,
+  tiltSeed,
+}: Props) {
   return (
     <article
       className={cn(
@@ -36,7 +45,11 @@ export function MessageCard({ message, template, actions, className }: Props) {
         CARD_STYLE_CLASSES[template.cards.style],
         className,
       )}
-      style={cardStyle(template, message.cardColor)}
+      style={{
+        ...cardStyle(template, message.cardColor),
+        // `rotate` (not transform) so it composes with entrance animations.
+        rotate: tiltSeed ? `${cardTilt(template, tiltSeed)}deg` : undefined,
+      }}
     >
       {message.image ? (
         <StoredImage

@@ -52,16 +52,38 @@ export function cardStyle(
   };
 }
 
-/** Tailwind classes giving each card style its look. */
+/**
+ * Classes giving each card style its look. Every card is a "sheet" with a
+ * layered, realistic shadow; all but glass get a paper texture (globals.css).
+ */
 export const CARD_STYLE_CLASSES: Record<CardStyle, string> = {
-  paper: "shadow-md shadow-black/10",
-  polaroid:
-    "border-[10px] border-b-[28px] border-white shadow-lg shadow-black/15",
-  sticky: "shadow-md shadow-black/15 odd:-rotate-1 even:rotate-1",
-  glass:
-    "bg-clip-padding opacity-95 shadow-xl shadow-black/30 ring-1 ring-white/30",
-  outline: "border-2 border-current",
+  paper: "ww-sheet ww-paper",
+  polaroid: "ww-sheet ww-paper border-[10px] border-b-[28px] border-white",
+  sticky: "ww-sheet ww-paper",
+  glass: "ww-sheet bg-clip-padding opacity-95 ring-1 ring-white/30",
+  outline: "ww-sheet ww-paper border-2 border-current",
 };
+
+/** Max tilt (degrees) per style: sticky notes get slapped on, letters are placed. */
+const MAX_TILT: Record<CardStyle, number> = {
+  sticky: 2.4,
+  polaroid: 1.8,
+  paper: 1.2,
+  outline: 0.8,
+  glass: 0.6,
+};
+
+/**
+ * A small, stable rotation for a card, as if placed by hand. Derived from
+ * the message id so it's the same on every render (no hydration mismatch).
+ */
+export function cardTilt(t: TemplateConfig, seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++)
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  const unit = ((hash >>> 0) % 1000) / 999; // 0..1
+  return Math.round((unit * 2 - 1) * MAX_TILT[t.cards.style] * 10) / 10;
+}
 
 /**
  * Font and colour for a message's own text choices. Falls back to the

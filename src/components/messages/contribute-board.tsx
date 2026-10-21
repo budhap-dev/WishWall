@@ -226,6 +226,7 @@ export function ContributeBoard({
                 <MessageCard
                   message={message}
                   template={template}
+                  tiltSeed={message.id}
                   actions={
                     isMine(message) ? (
                       <div className="flex shrink-0 gap-1">

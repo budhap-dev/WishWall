@@ -99,7 +99,11 @@ export function RevealGrid({
               transition={{ ...variant.transition, delay }}
               whileHover={reducedMotion ? undefined : { y: -4 }}
             >
-              <MessageCard message={message} template={template} />
+              <MessageCard
+                message={message}
+                template={template}
+                tiltSeed={message.id}
+              />
               {/* Whole-card click target (a button can't wrap the card's block content). */}
               <button
                 type="button"
