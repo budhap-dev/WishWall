@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/site/install-prompt";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 
@@ -10,6 +11,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
       <SiteHeader />
       {children}
       <SiteFooter />
+      <InstallPrompt />
     </>
   );
 }
