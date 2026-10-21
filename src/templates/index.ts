@@ -1,18 +1,26 @@
 import type { Occasion } from "@/generated/prisma/enums";
 import anniversaryGoldenHour from "./configs/anniversary-golden-hour";
+import anniversaryMoonlitWaltz from "./configs/anniversary-moonlit-waltz";
 import anniversaryRoseGarden from "./configs/anniversary-rose-garden";
 import birthdayConfettiPop from "./configs/birthday-confetti-pop";
 import birthdayMidnightBalloons from "./configs/birthday-midnight-balloons";
+import birthdaySprinkleCake from "./configs/birthday-sprinkle-cake";
 import congratulationsBlackTie from "./configs/congratulations-black-tie";
+import congratulationsChampagne from "./configs/congratulations-champagne";
 import congratulationsHooray from "./configs/congratulations-hooray";
+import farewellAirmail from "./configs/farewell-airmail";
 import farewellBonVoyage from "./configs/farewell-bon-voyage";
 import farewellSunsetRoad from "./configs/farewell-sunset-road";
+import getWellCozyQuilt from "./configs/get-well-cozy-quilt";
 import getWellSunnyDays from "./configs/get-well-sunny-days";
 import getWellWildflowers from "./configs/get-well-wildflowers";
 import missYouPaperHearts from "./configs/miss-you-paper-hearts";
+import missYouRainyDay from "./configs/miss-you-rainy-day";
 import missYouStarryNight from "./configs/miss-you-starry-night";
 import thankYouBotanical from "./configs/thank-you-botanical";
+import thankYouKraftPaper from "./configs/thank-you-kraft-paper";
 import thankYouPopArt from "./configs/thank-you-pop-art";
+import welcomeAllAboard from "./configs/welcome-all-aboard";
 import welcomeFreshStart from "./configs/welcome-fresh-start";
 import welcomeOpenDoor from "./configs/welcome-open-door";
 import type { TemplateConfig } from "./types";
@@ -28,20 +36,28 @@ export * from "./types";
 export const TEMPLATES: readonly TemplateConfig[] = [
   birthdayConfettiPop,
   birthdayMidnightBalloons,
+  birthdaySprinkleCake,
   anniversaryGoldenHour,
   anniversaryRoseGarden,
+  anniversaryMoonlitWaltz,
   farewellBonVoyage,
   farewellSunsetRoad,
+  farewellAirmail,
   missYouPaperHearts,
   missYouStarryNight,
+  missYouRainyDay,
   congratulationsBlackTie,
   congratulationsHooray,
+  congratulationsChampagne,
   getWellSunnyDays,
   getWellWildflowers,
+  getWellCozyQuilt,
   thankYouBotanical,
   thankYouPopArt,
+  thankYouKraftPaper,
   welcomeOpenDoor,
   welcomeFreshStart,
+  welcomeAllAboard,
 ];
 
 const byId = new Map(TEMPLATES.map((t) => [t.id, t]));
