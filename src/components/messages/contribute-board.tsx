@@ -16,6 +16,7 @@ import {
   deleteMessageAction,
   getMyMessagesAction,
 } from "@/server/actions/messages";
+import { signOutAction } from "@/server/actions/auth";
 import type { MessageView } from "@/server/services/messages";
 import { resolveTemplate } from "@/templates";
 import { boardSurfaceStyle, headingStyle } from "@/templates/styles";
@@ -222,7 +223,14 @@ export function ContributeBoard({
         ) : null}
         {viewer.signedIn ? (
           <p className="mt-4 text-sm opacity-80">
-            Signed in{viewer.name ? ` as ${viewer.name}` : ""}.
+            Signed in{viewer.name ? ` as ${viewer.name}` : ""}.{" "}
+            <button
+              type="button"
+              className="underline underline-offset-2"
+              onClick={() => void signOutAction(`/board/${board.shareSlug}`)}
+            >
+              Sign out
+            </button>
           </p>
         ) : null}
       </header>
