@@ -39,6 +39,10 @@ test("a guest posts with a photo, edits, and deletes their message", async ({
     page.getByRole("heading", { name: "Happy Birthday, Maya!" }),
   ).toBeVisible();
   await expect(page.getByText("No messages yet. Be the first!")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+    "href",
+    `/signin?callbackUrl=${encodeURIComponent(`/board/${board.shareSlug}`)}`,
+  );
 
   await page.getByRole("button", { name: "Add a message" }).first().click();
   const dialog = page.getByRole("dialog");
@@ -109,6 +113,8 @@ test("a signed-in contributor posts with their name filled in", async ({
 }) => {
   const board = await createTestBoard(user.id);
   await page.goto(`/board/${board.shareSlug}`);
+  await expect(page.getByText(`Signed in as ${user.name}.`)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
   await page.getByRole("button", { name: "Add a message" }).first().click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByLabel("Your name")).toHaveValue(user.name);

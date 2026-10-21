@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, PenLine, Pencil, Settings2, Trash2 } from "lucide-react";
+import { Lock, LogIn, PenLine, Pencil, Settings2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -188,6 +188,18 @@ export function ContributeBoard({
               </Link>
             </Button>
           ) : null}
+          {!viewer.signedIn && !needsSignIn ? (
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="bg-white/80 text-neutral-900 hover:bg-white"
+            >
+              <Link href={signInHref}>
+                <LogIn /> Sign in
+              </Link>
+            </Button>
+          ) : null}
         </div>
 
         {!board.isOpen ? (
@@ -203,12 +215,14 @@ export function ContributeBoard({
           </p>
         ) : null}
         {canPost && !viewer.signedIn ? (
-          <p className="mt-4 text-xs opacity-75">
-            Posting as a guest.{" "}
-            <Link href={signInHref} className="underline underline-offset-2">
-              Sign in with Google
-            </Link>{" "}
-            to edit your message from any device.
+          <p className="mt-4 text-sm opacity-80">
+            No account needed. Sign in with Google if you want to edit your
+            message later from any device.
+          </p>
+        ) : null}
+        {viewer.signedIn ? (
+          <p className="mt-4 text-sm opacity-80">
+            Signed in{viewer.name ? ` as ${viewer.name}` : ""}.
           </p>
         ) : null}
       </header>
