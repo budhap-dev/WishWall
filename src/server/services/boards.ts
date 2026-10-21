@@ -7,6 +7,7 @@ import type {
   CreateBoardData,
 } from "@/lib/validation/board";
 import { db } from "@/server/db";
+import { deleteImages } from "@/server/storage";
 
 /**
  * Board persistence. Every owner operation filters by BOTH board id and
@@ -14,10 +15,15 @@ import { db } from "@/server/db";
  * matches nothing and the caller gets null/false.
  */
 
-export async function createBoard(ownerId: string, data: CreateBoardData) {
+export async function createBoard(
+  ownerId: string,
+  data: Omit<CreateBoardData, "recipientPhoto">,
+  recipientPhotoKey: string | null,
+) {
   return db.board.create({
     data: {
       ...data,
+      recipientPhotoKey,
       ownerId,
       shareSlug: generateSlug(),
       revealSlug: generateSlug(),
@@ -111,10 +117,72 @@ export async function deleteBoard(
   ownerId: string,
   boardId: string,
 ): Promise<boolean> {
-  // Messages cascade in the database. Uploaded images are cleaned up once
-  // storage lands (Phase 3).
+  const board = await db.board.findFirst({
+    where: { id: boardId, ownerId },
+    select: {
+      recipientPhotoKey: true,
+      messages: { select: { imageKey: true } },
+    },
+  });
+  if (!board) return false;
+  // Messages cascade in the database; their images are removed from storage after.
   const { count } = await db.board.deleteMany({
     where: { id: boardId, ownerId },
   });
+  if (count === 1) {
+    await deleteImages([
+      board.recipientPhotoKey,
+      ...board.messages.map((m) => m.imageKey),
+    ]);
+  }
   return count === 1;
 }
+
+/** Sets or clears the recipient photo; the previous file is deleted. */
+export async function setRecipientPhoto(
+  ownerId: string,
+  boardId: string,
+  key: string | null,
+): Promise<boolean> {
+  const board = await db.board.findFirst({
+    where: { id: boardId, ownerId },
+    select: { recipientPhotoKey: true },
+  });
+  if (!board) return false;
+  await db.board.update({
+    where: { id: boardId },
+    data: { recipientPhotoKey: key },
+  });
+  if (board.recipientPhotoKey && board.recipientPhotoKey !== key) {
+    await deleteImages([board.recipientPhotoKey]);
+  }
+  return true;
+}
+
+// ─── Public (contributor) access, by unguessable slug ─────────────────────
+
+const PUBLIC_BOARD_SELECT = {
+  id: true,
+  ownerId: true,
+  recipientName: true,
+  recipientPhotoKey: true,
+  occasion: true,
+  title: true,
+  intro: true,
+  templateId: true,
+  eventDate: true,
+  status: true,
+  allowGuests: true,
+  messagesVisible: true,
+} as const;
+
+export function getBoardByShareSlug(shareSlug: string) {
+  return db.board.findUnique({
+    where: { shareSlug },
+    select: PUBLIC_BOARD_SELECT,
+  });
+}
+
+export type PublicBoard = NonNullable<
+  Awaited<ReturnType<typeof getBoardByShareSlug>>
+>;

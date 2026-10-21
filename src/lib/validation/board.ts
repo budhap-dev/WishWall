@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Occasion } from "@/generated/prisma/enums";
 import { isTemplateForOccasion } from "@/templates";
 import { multiLine, optionalDate, singleLine } from "./common";
+import { uploadedImageSchema } from "./message";
 
 export const BOARD_LIMITS = {
   recipientName: 80,
@@ -44,6 +45,7 @@ export const boardDetailsSchema = z.object({
 
 export const createBoardSchema = boardDetailsSchema
   .extend(appearanceShape)
+  .extend({ recipientPhoto: uploadedImageSchema.nullable().default(null) })
   .refine(templateMatchesOccasion, templateError);
 
 export const boardAppearanceSchema = z

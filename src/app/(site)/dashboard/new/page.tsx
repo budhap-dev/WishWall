@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreateBoardWizard } from "@/components/wizard/create-board-wizard";
 import { requireUser } from "@/server/session";
+import { uploadsEnabled } from "@/server/storage";
 
 export const metadata: Metadata = { title: "New board" };
 
@@ -19,5 +20,5 @@ export default function NewBoardPage() {
 
 async function SignedInWizard() {
   await requireUser("/dashboard/new");
-  return <CreateBoardWizard />;
+  return <CreateBoardWizard uploadsEnabled={uploadsEnabled} />;
 }

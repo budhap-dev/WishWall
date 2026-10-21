@@ -6,6 +6,10 @@ import { OccasionPicker } from "@/components/boards/occasion-picker";
 import { TemplatePicker } from "@/components/boards/template-picker";
 import { VisibilityFields } from "@/components/boards/visibility-fields";
 import { Field } from "@/components/form/field";
+import {
+  type ImageValue,
+  ImageUploadField,
+} from "@/components/messages/image-upload-field";
 import { TemplatePreview } from "@/components/templates/template-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,9 +55,15 @@ const INITIAL: State = {
   messagesVisible: true,
 };
 
-export function CreateBoardWizard() {
+export function CreateBoardWizard({
+  uploadsEnabled,
+}: {
+  uploadsEnabled: boolean;
+}) {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<State>(INITIAL);
+  const [photo, setPhoto] = useState<ImageValue | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [titleEdited, setTitleEdited] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -110,7 +120,19 @@ export function CreateBoardWizard() {
 
   function submit() {
     setFormError(null);
-    const input = { ...state, title, occasion: state.occasion };
+    const input = {
+      ...state,
+      title,
+      occasion: state.occasion,
+      recipientPhoto: photo
+        ? {
+            key: photo.key,
+            width: photo.width,
+            height: photo.height,
+            token: photo.token,
+          }
+        : null,
+    };
     const parsed = createBoardSchema.safeParse(input);
     if (!parsed.success) {
       setErrors(
@@ -195,24 +217,36 @@ export function CreateBoardWizard() {
           </h2>
 
           {current.key === "recipient" ? (
-            <Field
-              id="recipientName"
-              label="Recipient's name"
-              description="This is how they'll be named on the board."
-              error={errors.recipientName}
-            >
-              {(aria) => (
-                <Input
-                  {...aria}
-                  autoFocus
-                  autoComplete="off"
-                  maxLength={BOARD_LIMITS.recipientName}
-                  placeholder="e.g. Maya"
-                  value={state.recipientName}
-                  onChange={(e) => update({ recipientName: e.target.value })}
+            <div className="space-y-6">
+              <Field
+                id="recipientName"
+                label="Recipient's name"
+                description="This is how they'll be named on the board."
+                error={errors.recipientName}
+              >
+                {(aria) => (
+                  <Input
+                    {...aria}
+                    autoFocus
+                    autoComplete="off"
+                    maxLength={BOARD_LIMITS.recipientName}
+                    placeholder="e.g. Maya"
+                    value={state.recipientName}
+                    onChange={(e) => update({ recipientName: e.target.value })}
+                  />
+                )}
+              </Field>
+              {uploadsEnabled ? (
+                <ImageUploadField
+                  label="Their photo (optional)"
+                  purpose="recipients"
+                  value={photo}
+                  onChange={setPhoto}
+                  onBusyChange={setUploading}
+                  round
                 />
-              )}
-            </Field>
+              ) : null}
+            </div>
           ) : null}
 
           {current.key === "occasion" ? (
@@ -329,7 +363,7 @@ export function CreateBoardWizard() {
             >
               <ArrowLeft /> Back
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || uploading}>
               {isLast ? (
                 pending ? (
                   <>

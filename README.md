@@ -8,8 +8,8 @@ then reveal it as an animated card or download it as a PDF.
 Tailwind CSS 4 + shadcn/ui · Framer Motion · Auth.js v5 (Google) · Prisma 7 +
 PostgreSQL · Zod · Vitest + Playwright.
 
-> Status: **Phase 2 (Google sign-in, create-board wizard, owner dashboard)**
-> complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
+> Status: **Phase 3 (contributing: posting, guest edit/delete, image uploads,
+> rate limiting)** complete. See [PROJECT-BRIEF.md](PROJECT-BRIEF.md)
 > for the full plan.
 
 ## Prerequisites
@@ -114,6 +114,40 @@ Open <http://localhost:3000>. Check the database connection at
 | `pnpm db:studio`   | Browse the database in Prisma Studio                    |
 | `pnpm db:generate` | Regenerate the Prisma client                            |
 
+## Image uploads (parked)
+
+**Off by default.** Photo/GIF uploads are switched off until storage and
+privacy (consent, retention, deletion requests) are decided. While
+`UPLOADS_ENABLED` isn't `"true"`, upload buttons are hidden, `/api/uploads`
+refuses requests, and the server rejects image attachments. The code stays in
+place and the end-to-end tests run with uploads on, so it keeps working.
+
+When enabled, images go through `POST /api/uploads`, which identifies files by their bytes
+(not their name), re-encodes photos to WebP (dropping EXIF data such as GPS
+location), keeps GIFs animated, and signs the result so only real uploads can
+be attached to messages. Browsers shrink large photos before uploading, to stay
+under Vercel's 4.5 MB request limit.
+
+- **Development:** `STORAGE_DRIVER="local"` saves files to `./uploads`, served
+  at `/files/...`.
+- **Production:** `STORAGE_DRIVER="cloudinary"` (free tier). Create an account
+  at [cloudinary.com](https://cloudinary.com), then copy **Cloud name**,
+  **API key** and **API secret** from the dashboard's _API Keys_ page into
+  `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`.
+  Images are delivered resized by Cloudinary's CDN.
+
+## Abuse protection
+
+- **Rate limits** (per hour, stored in Postgres so they hold across serverless
+  instances): new messages per IP (`RATE_LIMIT_PER_IP`, default 10) and per
+  board (`RATE_LIMIT_PER_BOARD`, 200); uploads per IP
+  (`RATE_LIMIT_UPLOADS_PER_IP`, 30). IPs are stored only as salted hashes.
+- **CAPTCHA (optional):** set `CAPTCHA_ENABLED="true"` plus
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` from Cloudflare
+  Turnstile (free) to require an "I'm human" check on guest posts.
+- **Guest edits:** posting as a guest stores a random edit token in that
+  browser; the database keeps only its SHA-256 hash.
+
 ## Testing
 
 - **Unit tests** (`pnpm test`): validation, slugs, redirects, and every
@@ -164,11 +198,15 @@ src/
     (site)/              pages with the app header: landing, /signin, /dashboard/**
     api/auth/            Auth.js routes (Google OAuth callback, session)
     api/health/          DB connectivity check
+    api/uploads/         image upload endpoint
+    board/[slug]/        contribute page (share link)
+    files/[...key]/      serves locally stored uploads (dev)
   proxy.ts               bounces signed-out visitors away from /dashboard (cookie check only)
   components/
     ui/                  shadcn/ui primitives
     boards/              occasion/template pickers, visibility toggles
-    dashboard/           owner dashboard pieces (share links, forms, controls)
+    dashboard/           owner dashboard pieces (share links, forms, moderation)
+    messages/            message card, compose dialog, image upload, contribute board
     templates/           TemplatePreview (mini board rendered with a template)
     wizard/              the create-board wizard
   templates/
@@ -179,6 +217,9 @@ src/
   server/                server-only
     auth.ts, session.ts  Auth.js config; getCurrentUser/requireUser (data access layer)
     services/            database logic; every owner query is scoped to the owner
+    storage/             StorageAdapter + local disk and Cloudinary drivers
+    images.ts            upload validation and re-encoding (sharp)
+    rate-limit.ts        Postgres fixed-window rate limiter
     actions/             Server Actions: re-check session, validate with Zod, call services
 tests/
   unit/                  Vitest

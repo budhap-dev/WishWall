@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import { BoardAppearanceForm } from "@/components/dashboard/board-appearance-form";
 import { BoardControls } from "@/components/dashboard/board-controls";
 import { BoardDetailsForm } from "@/components/dashboard/board-details-form";
+import { ModerationList } from "@/components/dashboard/moderation-list";
+import { RecipientPhotoForm } from "@/components/dashboard/recipient-photo-form";
 import { ShareLinks } from "@/components/dashboard/share-links";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +23,8 @@ import { boardLinks } from "@/lib/links";
 import { OCCASIONS } from "@/lib/occasions";
 import { idSchema } from "@/lib/validation/common";
 import { getOwnedBoard } from "@/server/services/boards";
+import { listMessagesForOwner } from "@/server/services/messages";
+import { imageUrl, uploadsEnabled } from "@/server/storage";
 import { requireUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Manage board" };
@@ -51,7 +55,11 @@ async function ManageBoard({ params, searchParams }: Params) {
   // Same 404 for "doesn't exist" and "not yours", so ids can't be probed.
   if (!board) notFound();
 
-  const { created } = await searchParams;
+  const [{ created }, messages] = await Promise.all([
+    searchParams,
+    listMessagesForOwner(board.id),
+  ]);
+  const hiddenCount = messages.filter((m) => m.hidden).length;
   const links = boardLinks(board);
   const occasion = OCCASIONS[board.occasion];
   const isOpen = board.status === "OPEN";
@@ -116,16 +124,13 @@ async function ManageBoard({ params, searchParams }: Params) {
         <CardHeader>
           <CardTitle>Messages</CardTitle>
           <CardDescription>
-            {board._count.messages === 0
-              ? "No messages yet. Share the contribute link to get started."
-              : pluralize(board._count.messages, "message")}
+            {pluralize(messages.length, "message")}
+            {hiddenCount ? ` · ${hiddenCount} hidden` : ""}. Hidden messages
+            aren&apos;t shown to anyone else.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Moderation (hide, unhide and delete messages) arrives with posting
-            in the next phase.
-          </p>
+          <ModerationList messages={messages} />
         </CardContent>
       </Card>
 
@@ -133,7 +138,20 @@ async function ManageBoard({ params, searchParams }: Params) {
         <CardHeader>
           <CardTitle>Details</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {uploadsEnabled ? (
+            <RecipientPhotoForm
+              boardId={board.id}
+              initial={
+                board.recipientPhotoKey
+                  ? {
+                      key: board.recipientPhotoKey,
+                      url: imageUrl(board.recipientPhotoKey)!,
+                    }
+                  : null
+              }
+            />
+          ) : null}
           <BoardDetailsForm
             boardId={board.id}
             initial={{

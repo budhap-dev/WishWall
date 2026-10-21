@@ -13,8 +13,10 @@ import {
   boardDetailsSchema,
   createBoardSchema,
 } from "@/lib/validation/board";
+import { uploadedImageSchema } from "@/lib/validation/message";
 import * as boards from "@/server/services/boards";
 import { requireUser } from "@/server/session";
+import { isVerifiedUpload } from "@/server/verify-image";
 
 // Server Actions are public HTTP endpoints: each one re-checks the session,
 // validates its input with Zod (never trusting client types), and relies on
@@ -32,8 +34,52 @@ export async function createBoardAction(
   const parsed = createBoardSchema.safeParse(input);
   if (!parsed.success) return fieldErrorResult(parsed.error);
 
-  const board = await boards.createBoard(user.id, parsed.data);
+  const { recipientPhoto, ...data } = parsed.data;
+  if (recipientPhoto && !isVerifiedUpload(recipientPhoto, "recipients")) {
+    return {
+      ok: false,
+      error: "That photo upload is invalid. Please upload it again.",
+    };
+  }
+
+  const board = await boards.createBoard(
+    user.id,
+    data,
+    recipientPhoto?.key ?? null,
+  );
   redirect(`/dashboard/boards/${board.id}?created=1`);
+}
+
+/** Sets (or clears, with null) the recipient's photo. */
+export async function setRecipientPhotoAction(
+  boardId: unknown,
+  photo: unknown,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  const id = idSchema.safeParse(boardId);
+  if (!id.success) return NOT_FOUND;
+  const parsed = uploadedImageSchema.nullable().safeParse(photo);
+  if (
+    !parsed.success ||
+    (parsed.data && !isVerifiedUpload(parsed.data, "recipients"))
+  ) {
+    return {
+      ok: false,
+      error: "That photo upload is invalid. Please upload it again.",
+    };
+  }
+
+  if (
+    !(await boards.setRecipientPhoto(
+      user.id,
+      id.data,
+      parsed.data?.key ?? null,
+    ))
+  ) {
+    return NOT_FOUND;
+  }
+  refresh();
+  return { ok: true, data: undefined };
 }
 
 export async function updateBoardDetailsAction(

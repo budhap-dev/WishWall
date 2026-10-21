@@ -8,6 +8,8 @@ const baseURL = `http://localhost:${PORT}`;
 // own data.
 export default defineConfig({
   testDir: "tests/e2e",
+  globalSetup: "./tests/e2e/reset-rate-limits.ts",
+  globalTeardown: "./tests/e2e/reset-rate-limits.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -31,6 +33,18 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 180_000,
     gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-    env: { APP_URL: baseURL },
+    env: {
+      APP_URL: baseURL,
+      // Uploads are parked (off) by default; tests switch them on to keep
+      // the code covered.
+      UPLOADS_ENABLED: "true",
+      STORAGE_DRIVER: "local",
+      CAPTCHA_ENABLED: "false",
+      // Every test posts from localhost, so per-IP limits are raised; the
+      // per-board limit is low so one test can prove rate limiting works.
+      RATE_LIMIT_PER_IP: "10000",
+      RATE_LIMIT_UPLOADS_PER_IP: "10000",
+      RATE_LIMIT_PER_BOARD: "5",
+    },
   },
 });

@@ -65,3 +65,40 @@ export const test = base.extend<{ user: TestUser }>({
 });
 
 export { expect };
+
+export type TestBoard = { id: string; shareSlug: string; revealSlug: string };
+
+/** Inserts a board owned by `ownerId` (defaults: open, guests allowed, messages visible). */
+export async function createTestBoard(
+  ownerId: string,
+  overrides: Partial<{
+    title: string;
+    status: "OPEN" | "CLOSED";
+    allowGuests: boolean;
+    messagesVisible: boolean;
+  }> = {},
+): Promise<TestBoard> {
+  const board = {
+    id: `e2eb${randomBytes(10).toString("hex")}`,
+    shareSlug: randomBytes(24).toString("base64url"),
+    revealSlug: randomBytes(24).toString("base64url"),
+  };
+  await withDb((db) =>
+    db.query(
+      `INSERT INTO "Board" (id, "ownerId", "shareSlug", "revealSlug", "recipientName", occasion,
+         title, "templateId", status, "allowGuests", "messagesVisible", "updatedAt")
+       VALUES ($1, $2, $3, $4, 'Maya', 'BIRTHDAY', $5, 'birthday-confetti-pop', $6, $7, $8, now())`,
+      [
+        board.id,
+        ownerId,
+        board.shareSlug,
+        board.revealSlug,
+        overrides.title ?? "Happy Birthday, Maya!",
+        overrides.status ?? "OPEN",
+        overrides.allowGuests ?? true,
+        overrides.messagesVisible ?? true,
+      ],
+    ),
+  );
+  return board;
+}
