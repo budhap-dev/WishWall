@@ -18,6 +18,7 @@ export async function signInAsDemoUserAction(formData: FormData) {
   redirect(safeRedirectPath(formData.get("callbackUrl")));
 }
 
-export async function signOutAction() {
-  await signOut({ redirectTo: "/" });
+/** Signs out, then goes to `redirectTo` (same-site paths only) or home. */
+export async function signOutAction(redirectTo?: string) {
+  await signOut({ redirectTo: safeRedirectPath(redirectTo, "/") });
 }

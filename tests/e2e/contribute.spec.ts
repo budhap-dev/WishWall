@@ -131,6 +131,11 @@ test("a signed-in contributor posts with their name filled in", async ({
     ),
   );
   expect(row.rows[0]).toEqual({ authorId: user.id, editTokenHash: null });
+
+  // Signing out from the board stays on the board, now as a guest.
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/board/${board.shareSlug}$`));
 });
 
 test("surprise mode shows contributors only their own messages", async ({
