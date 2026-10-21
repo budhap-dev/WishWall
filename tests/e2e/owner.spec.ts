@@ -16,15 +16,20 @@ anonymous(
 test("create a board with the wizard, then manage it", async ({
   page,
   user,
+  isMobile,
 }) => {
   await page.goto("/dashboard");
   await expect(
     page.getByRole("heading", { name: "No boards yet" }),
   ).toBeVisible();
 
-  // The header shows who's signed in.
-  await page.getByRole("button", { name: "Account menu" }).click();
-  await expect(page.getByRole("menu")).toContainText(user.email);
+  // The header shows who's signed in (in the side panel on small screens).
+  await page
+    .getByRole("button", { name: isMobile ? "Open menu" : "Account menu" })
+    .click();
+  await expect(page.getByRole(isMobile ? "dialog" : "menu")).toContainText(
+    user.email,
+  );
   await page.keyboard.press("Escape");
 
   await page.getByRole("link", { name: "Create your first board" }).click();
