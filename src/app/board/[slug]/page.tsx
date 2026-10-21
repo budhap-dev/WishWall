@@ -24,13 +24,16 @@ export async function generateMetadata({
   const board = isValidSlug(slug) ? await getBoardByShareSlug(slug) : null;
   if (!board) return { title: "Board not found", robots };
 
-  const title = board.title;
-  const description =
-    board.status === "OPEN"
-      ? `Add your message to a group card for ${board.recipientName}.${board.allowGuests ? " No account needed." : ""}`
-      : `A group card for ${board.recipientName}.`;
+  // Preview title names the recipient; the board's own title goes below it.
+  const open = board.status === "OPEN";
+  const title = open
+    ? `Sign the card for ${board.recipientName} ✍️`
+    : `A group card for ${board.recipientName}`;
+  const description = open
+    ? `${board.title} · Add your message.${board.allowGuests ? " No account needed." : ""}`
+    : board.title;
   return {
-    title: `Sign the card: ${title}`,
+    title,
     description,
     robots,
     openGraph: {

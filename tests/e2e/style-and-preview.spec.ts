@@ -79,9 +79,9 @@ test("board links carry link-preview tags for WhatsApp", async ({
   ).text();
   const head = html.slice(0, html.indexOf("</head>"));
   expect(head).toContain(
-    '<meta property="og:title" content="Happy Birthday, Maya!"',
+    '<meta property="og:title" content="Sign the card for Maya ✍️"',
   );
-  expect(head).toContain("Add your message to a group card for Maya.");
+  expect(head).toContain("Happy Birthday, Maya! · Add your message.");
   const image = head.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
   expect(image).toMatch(
     /^http:\/\/localhost:3100\/board\/[\w-]{32}\/opengraph-image/,
