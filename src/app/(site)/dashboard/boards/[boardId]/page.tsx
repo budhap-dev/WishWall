@@ -9,6 +9,7 @@ import { BoardDetailsForm } from "@/components/dashboard/board-details-form";
 import { ModerationList } from "@/components/dashboard/moderation-list";
 import { RecipientPhotoForm } from "@/components/dashboard/recipient-photo-form";
 import { ShareLinks } from "@/components/dashboard/share-links";
+import { DownloadPdfButton } from "@/components/reveal/download-pdf-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -74,6 +75,12 @@ async function ManageBoard({ params, searchParams }: Params) {
           <Badge variant={isOpen ? "secondary" : "outline"}>
             {isOpen ? "Open" : "Closed"}
           </Badge>
+          {board._count.messages > 0 ? (
+            <DownloadPdfButton
+              revealSlug={board.revealSlug}
+              className="ml-auto"
+            />
+          ) : null}
         </div>
         <p className="text-muted-foreground">
           {occasion.emoji} {occasion.label} for {board.recipientName}

@@ -212,6 +212,12 @@
   }
 }
 
+/* Unmoving scatter (print cover): placed at --x/--y, turned by --spin. */
+.ww-still {
+  top: var(--y);
+  rotate: var(--spin);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ww-particle {
     animation: none !important;
@@ -252,4 +258,48 @@
       rgb(0 0 0 / 0.025) 100%
     ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Print (browser Print and the PDF export) ──────────────────────────────── */
+@media print {
+  html {
+    /* Keep template backgrounds and card colours instead of saving ink. */
+    print-color-adjust: exact;
+  }
+  @page {
+    margin: 12mm;
+  }
+  /* Cards rest flat on the page and never split across pages. Hard-edged
+     shadow: Chromium turns each blurred one into a large bitmap in a PDF. */
+  .ww-sheet {
+    box-shadow:
+      0 0 0 0.5px rgb(0 0 0 / 0.08),
+      0 2px 0 rgb(0 0 0 / 0.07);
+    break-inside: avoid;
+  }
+  /* Same paper light and curl, minus the grain: its SVG noise filter becomes
+     a large bitmap per card in a PDF. */
+  .ww-paper {
+    background-image:
+      radial-gradient(
+        120% 90% at 100% 100%,
+        rgb(0 0 0 / 0.07) 0%,
+        transparent 32%
+      ),
+      linear-gradient(
+        165deg,
+        rgb(255 255 255 / 0.45) 0%,
+        rgb(255 255 255 / 0) 38%,
+        rgb(0 0 0 / 0.025) 100%
+      );
+  }
+  /* Entrance animations may not have run (or finished) when printing starts. */
+  .ww-print-visible {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* Next.js dev tools badge. */
+  nextjs-portal {
+    display: none;
+  }
 }

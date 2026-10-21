@@ -52,6 +52,8 @@ const serverSchema = z
     RATE_LIMIT_PER_IP: z.coerce.number().int().positive().default(10),
     RATE_LIMIT_PER_BOARD: z.coerce.number().int().positive().default(200),
     RATE_LIMIT_UPLOADS_PER_IP: z.coerce.number().int().positive().default(30),
+    // Each PDF launches a headless browser, so downloads are limited too.
+    RATE_LIMIT_PDF_PER_IP: z.coerce.number().int().positive().default(20),
 
     // Cloudflare Turnstile for guest posts
     CAPTCHA_ENABLED: booleanFlag,

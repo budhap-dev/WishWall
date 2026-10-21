@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { seededRandom } from "@/lib/seeded-random";
+import { cn } from "@/lib/utils";
 import type { Decoration, TemplateConfig } from "@/templates";
 
 type Motion = "fall" | "rise" | "twinkle" | "glide";
@@ -179,6 +180,8 @@ type Props = {
   seed: number;
   /** Fewer particles, e.g. behind the opener or for reduced motion. */
   density?: number;
+  /** Scatter the particles, unmoving, over the parent instead of the screen (print cover). */
+  still?: boolean;
 };
 
 /**
@@ -187,7 +190,12 @@ type Props = {
  * prefers-reduced-motion. Twinkling decorations then stay as a static pattern;
  * moving ones are left out by the caller.
  */
-export function Decorations({ template, seed, density = 1 }: Props) {
+export function Decorations({
+  template,
+  seed,
+  density = 1,
+  still = false,
+}: Props) {
   if (template.decoration === "none") return null;
   const spec = SPECS[template.decoration];
   const r = seededRandom(seed);
@@ -201,7 +209,10 @@ export function Decorations({ template, seed, density = 1 }: Props) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 overflow-hidden"
+      className={cn(
+        "pointer-events-none inset-0 overflow-hidden",
+        still ? "absolute" : "fixed print:hidden",
+      )}
       style={{ color: template.colors.text }}
     >
       {Array.from({ length: count }, (_, i) => {
@@ -226,7 +237,10 @@ export function Decorations({ template, seed, density = 1 }: Props) {
         return (
           <svg
             key={i}
-            className={`ww-particle ww-${spec.motion}`}
+            className={cn(
+              "ww-particle",
+              still ? "ww-still" : `ww-${spec.motion}`,
+            )}
             style={style}
             viewBox={
               template.decoration === "balloons" ? "0 0 10 18" : "0 0 10 10"

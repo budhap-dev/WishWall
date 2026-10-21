@@ -74,6 +74,7 @@ async function Reveal({
         templateId: board.templateId,
       }}
       messages={messages}
+      revealSlug={slug}
     />
   );
 }
