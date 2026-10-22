@@ -2,6 +2,7 @@
 
 import { LayoutGrid, LogOut, Plus } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOutAction } from "@/server/actions/auth";
+import { SignOutDialog } from "./sign-out-dialog";
 
 type Props = {
   name: string | null;
@@ -46,37 +47,47 @@ export function UserAvatar({
 }
 
 export function UserMenu({ name, email, image }: Props) {
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        aria-label="Account menu"
-      >
-        <UserAvatar name={name} email={email} image={image} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <p className="truncate text-sm font-medium">{name ?? "Signed in"}</p>
-          {email ? (
-            <p className="truncate text-xs text-muted-foreground">{email}</p>
-          ) : null}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">
-            <LayoutGrid /> My boards
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard/new">
-            <Plus /> New board
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void signOutAction()}>
-          <LogOut /> Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          aria-label="Account menu"
+        >
+          <UserAvatar name={name} email={email} image={image} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="font-normal">
+            <p className="truncate text-sm font-medium">
+              {name ?? "Signed in"}
+            </p>
+            {email ? (
+              <p className="truncate text-xs text-muted-foreground">{email}</p>
+            ) : null}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard">
+              <LayoutGrid /> My boards
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/new">
+              <Plus /> New board
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setConfirmSignOut(true)}
+          >
+            <LogOut /> Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <SignOutDialog open={confirmSignOut} onOpenChange={setConfirmSignOut} />
+    </>
   );
 }

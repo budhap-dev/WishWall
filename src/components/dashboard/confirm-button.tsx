@@ -11,42 +11,38 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-type Props = {
-  children: ReactNode;
+type DialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   description: ReactNode;
   confirmLabel: string;
   destructive?: boolean;
   /** Resolve to close the dialog; the dialog stays open (with buttons re-enabled) if it throws. */
   onConfirm: () => Promise<void>;
-} & Pick<ComponentProps<typeof Button>, "variant" | "size" | "className">;
+};
 
-/** A button that asks for confirmation before running an action. */
-export function ConfirmButton({
-  children,
+/** Asks for confirmation before running an action; opened by its caller. */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
   title,
   description,
   confirmLabel,
   destructive,
   onConfirm,
-  variant = "outline",
-  size,
-  className,
-}: Props) {
-  const [open, setOpen] = useState(false);
+}: DialogProps) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
-      <AlertDialogTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
-          {children}
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => !pending && onOpenChange(next)}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -61,7 +57,7 @@ export function ConfirmButton({
             onClick={() =>
               startTransition(async () => {
                 await onConfirm();
-                setOpen(false);
+                onOpenChange(false);
               })
             }
           >
@@ -71,5 +67,41 @@ export function ConfirmButton({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+type Props = Omit<DialogProps, "open" | "onOpenChange"> & {
+  children: ReactNode;
+} & Pick<ComponentProps<typeof Button>, "variant" | "size" | "className">;
+
+/** Destructive actions read red even on a plain (ghost/outline) button. */
+export const DESTRUCTIVE_TEXT =
+  "text-destructive hover:bg-destructive/10 hover:text-destructive";
+
+/** A button that asks for confirmation before running an action. */
+export function ConfirmButton({
+  children,
+  variant = "outline",
+  size,
+  className,
+  ...dialog
+}: Props) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        className={cn(
+          dialog.destructive && variant !== "destructive" && DESTRUCTIVE_TEXT,
+          className,
+        )}
+        onClick={() => setOpen(true)}
+      >
+        {children}
+      </Button>
+      <ConfirmDialog open={open} onOpenChange={setOpen} {...dialog} />
+    </>
   );
 }
