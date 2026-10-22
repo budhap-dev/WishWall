@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/dashboard/confirm-button";
+import { SignOutDialog } from "@/components/site/sign-out-dialog";
 import { Button } from "@/components/ui/button";
 import {
   forgetEditToken,
@@ -16,7 +17,6 @@ import {
   deleteMessageAction,
   getMyMessagesAction,
 } from "@/server/actions/messages";
-import { signOutAction } from "@/server/actions/auth";
 import type { MessageView } from "@/server/services/messages";
 import { resolveTemplate } from "@/templates";
 import { boardSurfaceStyle, headingStyle } from "@/templates/styles";
@@ -58,6 +58,7 @@ export function ContributeBoard({
   const template = resolveTemplate(board.templateId, board.occasion);
   const tokens = useEditTokens();
   const [composeOpen, setComposeOpen] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [target, setTarget] = useState<ComposeTarget>({ mode: "create" });
   // Surprise mode: the server doesn't know which messages are a guest's, so
   // fetch them using the tokens stored in this browser.
@@ -227,10 +228,15 @@ export function ContributeBoard({
             <button
               type="button"
               className="underline underline-offset-2"
-              onClick={() => void signOutAction(`/board/${board.shareSlug}`)}
+              onClick={() => setConfirmSignOut(true)}
             >
               Sign out
             </button>
+            <SignOutDialog
+              open={confirmSignOut}
+              onOpenChange={setConfirmSignOut}
+              redirectTo={`/board/${board.shareSlug}`}
+            />
           </p>
         ) : null}
       </header>

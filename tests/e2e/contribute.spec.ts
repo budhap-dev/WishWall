@@ -132,8 +132,16 @@ test("a signed-in contributor posts with their name filled in", async ({
   );
   expect(row.rows[0]).toEqual({ authorId: user.id, editTokenHash: null });
 
-  // Signing out from the board stays on the board, now as a guest.
+  // Signing out asks first; cancelling keeps you signed in.
   await page.getByRole("button", { name: "Sign out" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Sign out?" });
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText(/^Signed in/)).toBeVisible();
+
+  // Confirmed, it stays on the board, now as a guest.
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await confirm.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/board/${board.shareSlug}$`));
 });

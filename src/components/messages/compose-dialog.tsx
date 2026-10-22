@@ -291,7 +291,8 @@ function ComposeForm({
             <Textarea
               id={ids.body}
               ref={textareaRef}
-              rows={5}
+              rows={6}
+              className="min-h-40 sm:min-h-36"
               maxLength={MESSAGE_LIMITS.body}
               value={body}
               onChange={(e) => setBody(e.target.value)}
