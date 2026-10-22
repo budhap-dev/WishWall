@@ -29,7 +29,7 @@ type Props = RevealProps & { paper: PaperSize };
 
 /**
  * The board as a printed card: a cover, the messages packed onto pages the
- * way the reveal wall shows them, and a back cover. Pages are laid out here
+ * way the reveal wall shows them. Pages are laid out here
  * (cards are measured first, then placed), so the download preview and the
  * PDF, which both render this, show exactly the same pages.
  */
@@ -82,7 +82,7 @@ export function PrintBook({ board, messages, paper }: Props) {
   useEffect(() => {
     if (pages && window.parent !== window) {
       window.parent.postMessage(
-        { type: PAGES_MESSAGE, count: pages.length + 2 },
+        { type: PAGES_MESSAGE, count: 1 + Math.max(pages.length, 1) },
         window.location.origin,
       );
     }
@@ -138,6 +138,10 @@ export function PrintBook({ board, messages, paper }: Props) {
               )}
             </p>
           </div>
+          <div className="absolute inset-x-0 bottom-12 flex flex-col items-center gap-2 opacity-80">
+            <LogoMark className="size-9" />
+            <p className="text-sm">Made with WishWall</p>
+          </div>
         </Page>
 
         <h2 className="sr-only">Messages</h2>
@@ -185,13 +189,6 @@ export function PrintBook({ board, messages, paper }: Props) {
             </p>
           </Page>
         ) : null}
-
-        <Page style={pageStyle}>
-          <div className="flex h-full flex-col items-center justify-end gap-3 pb-24 opacity-80">
-            <LogoMark className="size-12" />
-            <p className="text-sm">Made with WishWall</p>
-          </div>
-        </Page>
       </div>
 
       {/* Off-screen copies of every card, at column and full width, to measure. */}

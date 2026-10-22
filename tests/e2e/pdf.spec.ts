@@ -20,7 +20,7 @@ test("the recipient downloads the board as a PDF", async ({ page, user }) => {
   await page.getByRole("button", { name: "Download PDF" }).click();
   // The preview frames the print page and shows its page count once laid out.
   const preview = page.getByRole("dialog", { name: "Preview your card" });
-  await expect(preview.getByText("3 pages")).toBeVisible();
+  await expect(preview.getByText("2 pages")).toBeVisible();
   await expect(
     preview
       .frameLocator("iframe")
@@ -36,9 +36,10 @@ test("the recipient downloads the board as a PDF", async ({ page, user }) => {
 
   const pdf = await readFile((await download.path())!);
   expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
-  // Cover, one page of messages and the back cover, all A4 (595.92pt wide).
+  // The cover and one page of messages, all A4 (595.92pt wide): no blank
+  // page at the end.
   const widths = pageWidths(pdf);
-  expect(widths).toHaveLength(3);
+  expect(widths).toHaveLength(2);
   expect(new Set(widths)).toEqual(new Set([596]));
 });
 
