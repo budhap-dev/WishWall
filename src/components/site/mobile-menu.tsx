@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/server/actions/auth";
+import { Logo } from "./logo";
 import { isActive, navItems } from "./nav-links";
 import { UserAvatar } from "./user-menu";
 
@@ -42,7 +43,7 @@ export function MobileMenu({ user, versionLabel }: Props) {
       <SheetContent side="right" className="w-72">
         <SheetHeader>
           <SheetTitle className="text-lg font-semibold">
-            Wish<span className="text-primary">Wall</span>
+            <Logo markClassName="size-6" />
           </SheetTitle>
           <SheetDescription className="sr-only">Main menu</SheetDescription>
         </SheetHeader>

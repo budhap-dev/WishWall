@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { versionLabel } from "@/lib/version";
 import { getCurrentUser } from "@/server/session";
+import { Logo } from "./logo";
 import { MobileMenu } from "./mobile-menu";
 import { NavLinks } from "./nav-links";
 import { UserMenu } from "./user-menu";
@@ -17,7 +18,7 @@ export function SiteHeader() {
           href="/"
           className="rounded-sm font-heading text-xl font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          Wish<span className="text-primary">Wall</span>
+          <Logo />
         </Link>
         {/* Reads the session cookie, so it streams in behind a boundary. */}
         <Suspense
