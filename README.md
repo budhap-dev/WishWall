@@ -182,7 +182,7 @@ preview of the printed card, page by page, with a choice of A4 or US Letter.
 The card is `/board/<revealSlug>/print?paper=a4|letter`: a cover with the
 recipient, title and template art, the messages packed onto pages like the
 reveal wall (three columns, masonry; a card taller than a page spans the
-width), and a back cover. Pages are laid out in the browser (cards are
+width). Pages are laid out in the browser (cards are
 measured, then placed by `src/lib/print-layout.ts`) at a fixed design width
 and zoomed to the paper, so the preview, which frames that page, matches the
 PDF exactly. `GET /board/<revealSlug>/pdf?paper=a4|letter` opens the same
@@ -252,9 +252,9 @@ region `lhr1` next to the Neon database in London).
   (above) before merging. To deploy by hand, run `pnpm dlx vercel deploy --prod`
   from the repo root; `.vercelignore` keeps `.env` and build output from being
   uploaded.
-- **Preview deploys:** Vercel also builds each PR branch, but the environment
-  variables are set for Production only, so previews have no database or
-  sign-in yet.
+- **No preview deploys:** `vercel.json` (`git.deploymentEnabled`) deploys
+  `main` only. The environment variables are set for Production only, so a
+  PR branch build would fail (and email) for want of a database and sign-in.
 - The build script runs `prisma generate` itself, because Vercel's dependency
   cache can skip `postinstall`.
 
