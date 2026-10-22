@@ -177,14 +177,19 @@ are frozen or left out.
 
 ## PDF export
 
-"Download PDF" (on the recipient's view and the owner dashboard) offers A4 or
-US Letter. `GET /board/<revealSlug>/pdf?paper=a4|letter` opens
-`/board/<revealSlug>/print` in headless Chromium (Playwright) and prints it:
-a cover page with the recipient, title and template art, then every message
-in two columns, never split across pages. Only the reveal link works, so
-contributors can't download a surprise-mode board. Downloads are limited per
-IP (`RATE_LIMIT_PDF_PER_IP`, default 20 an hour), since each one runs a
-browser.
+"Download PDF" (on the recipient's view and the owner dashboard) opens a
+preview of the printed card, page by page, with a choice of A4 or US Letter.
+The card is `/board/<revealSlug>/print?paper=a4|letter`: a cover with the
+recipient, title and template art, the messages packed onto pages like the
+reveal wall (three columns, masonry; a card taller than a page spans the
+width), and a back cover. Pages are laid out in the browser (cards are
+measured, then placed by `src/lib/print-layout.ts`) at a fixed design width
+and zoomed to the paper, so the preview, which frames that page, matches the
+PDF exactly. `GET /board/<revealSlug>/pdf?paper=a4|letter` opens the same
+page in headless Chromium (Playwright) and prints it. Only the reveal link
+works, so contributors can't download a surprise-mode board. Downloads are
+limited per IP (`RATE_LIMIT_PDF_PER_IP`, default 20 an hour), since each one
+runs a browser.
 
 - **Locally** it uses Playwright's Chromium:
   `pnpm exec playwright install chromium` (the same one the end-to-end tests
@@ -289,7 +294,7 @@ src/
     dashboard/           owner dashboard pieces (share links, forms, moderation)
     messages/            message card, compose dialog, image upload, contribute board
     reveal/              openers (envelope/gift box/curtain), decorations, grid, lightbox, PDF button
-    print/               the board laid out as printed pages
+    print/               the board as a printed card (paginated pages)
     templates/           TemplatePreview (mini board rendered with a template)
     wizard/              the create-board wizard
   templates/

@@ -18,18 +18,27 @@ test("the recipient downloads the board as a PDF", async ({ page, user }) => {
   await page.getByRole("button", { name: /Open your card for Maya/ }).click();
 
   await page.getByRole("button", { name: "Download PDF" }).click();
+  // The preview frames the print page and shows its page count once laid out.
+  const preview = page.getByRole("dialog", { name: "Preview your card" });
+  await expect(preview.getByText("3 pages")).toBeVisible();
+  await expect(
+    preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Happy Birthday, Maya!" }),
+  ).toBeVisible();
+  await expect(preview.getByRole("radio", { name: /A4/ })).toBeChecked();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("menuitem", { name: /A4/ }).click(),
+    preview.getByRole("button", { name: "Download", exact: true }).click(),
   ]);
   expect(download.suggestedFilename()).toBe("Happy Birthday, Maya!.pdf");
   await expect(page.getByText("PDF downloaded")).toBeVisible();
 
   const pdf = await readFile((await download.path())!);
   expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
-  // A cover page plus the messages, all A4 (595.92pt wide).
+  // Cover, one page of messages and the back cover, all A4 (595.92pt wide).
   const widths = pageWidths(pdf);
-  expect(widths.length).toBeGreaterThanOrEqual(2);
+  expect(widths).toHaveLength(3);
   expect(new Set(widths)).toEqual(new Set([596]));
 });
 
@@ -49,11 +58,12 @@ test("the print page shows what the recipient sees", async ({ page, user }) => {
     { author: "Sam", body: "See you Saturday" },
     { author: "Troll", body: "Hidden by the owner", hidden: true },
   ]);
-  await page.goto(`/board/${board.revealSlug}/print`);
+  await page.goto(`/board/${board.revealSlug}/print?paper=letter`);
   await expect(
     page.getByRole("heading", { name: "Happy Birthday, Maya!" }),
   ).toBeVisible();
   await expect(page.getByText("For Maya")).toBeVisible();
+  await expect(page.locator("[data-print-ready]")).toBeAttached();
   await expect(page.getByRole("article")).toHaveCount(2);
   await expect(page.getByText("Hidden by the owner")).toHaveCount(0);
 });

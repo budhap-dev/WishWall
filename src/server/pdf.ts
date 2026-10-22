@@ -3,8 +3,7 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Browser } from "playwright-core";
-
-export type PaperSize = "a4" | "letter";
+import type { PaperSize } from "@/lib/print-layout";
 
 // Serverless Chromium ships one font (Open Sans) and no emoji, so this one is
 // bundled with the function (next.config.ts) and installed before launch.
@@ -46,7 +45,7 @@ export async function renderPdf(
     if (!response?.ok()) {
       throw new Error(`Print page returned ${response?.status() ?? "nothing"}`);
     }
-    // Streamed content is swapped in by script, possibly after `load`.
+    // The pages are laid out by script once the cards are measured.
     await page.waitForSelector("[data-print-ready]");
     await page.evaluate(async () => {
       await document.fonts.ready;
@@ -59,8 +58,8 @@ export async function renderPdf(
     return await page.pdf({
       format: paper === "letter" ? "Letter" : "A4",
       printBackground: true,
-      // Margins come from the print page's @page rule.
-      preferCSSPageSize: false,
+      // Pages are full-bleed: the print page draws its own margins.
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
     });
   } finally {
     await browser.close();

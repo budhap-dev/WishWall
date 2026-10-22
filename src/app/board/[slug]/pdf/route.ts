@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
+import { parsePaper } from "@/lib/print-layout";
 import { isValidSlug } from "@/lib/slug";
 import { clientIpKey } from "@/server/client-ip";
 import { renderPdf } from "@/server/pdf";
@@ -39,11 +40,10 @@ export async function GET(
     );
   }
 
-  const paper =
-    request.nextUrl.searchParams.get("paper") === "letter" ? "letter" : "a4";
+  const paper = parsePaper(request.nextUrl.searchParams.get("paper"));
   // APP_URL rather than the request's Host header, so the browser can only
   // ever be pointed at this app.
-  const printUrl = `${env.APP_URL.replace(/\/$/, "")}/board/${slug}/print`;
+  const printUrl = `${env.APP_URL.replace(/\/$/, "")}/board/${slug}/print?paper=${paper}`;
 
   let pdf: Buffer;
   try {

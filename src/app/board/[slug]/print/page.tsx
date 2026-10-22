@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { PrintBoard } from "@/components/print/print-board";
+import { PrintBook } from "@/components/print/print-book";
 import { formatEventDate } from "@/lib/format";
+import { parsePaper } from "@/lib/print-layout";
 import { isValidSlug } from "@/lib/slug";
 import { getBoardByRevealSlug } from "@/server/services/boards";
 import { listMessagesForReveal } from "@/server/services/messages";
@@ -20,29 +21,35 @@ export async function generateMetadata({
 }
 
 /**
- * Printable board, keyed by the reveal slug like the recipient's view.
- * /board/[slug]/pdf renders it to a PDF; it also prints well from a browser.
+ * Printable board (`?paper=a4|letter`), keyed by the reveal slug like the
+ * recipient's view. /board/[slug]/pdf renders it to a PDF, and the download
+ * preview shows it in a frame; it also prints well from a browser.
  */
 export default function PrintPage({
   params,
+  searchParams,
 }: PageProps<"/board/[slug]/print">) {
   return (
     <Suspense fallback={null}>
-      <Print params={params} />
+      <Print params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 async function Print({
   params,
-}: Pick<PageProps<"/board/[slug]/print">, "params">) {
+  searchParams,
+}: Pick<PageProps<"/board/[slug]/print">, "params" | "searchParams">) {
   const { slug } = await params;
   const board = isValidSlug(slug) ? await getBoardByRevealSlug(slug) : null;
   if (!board) notFound();
-  const messages = await listMessagesForReveal(board.id);
+  const [messages, { paper }] = await Promise.all([
+    listMessagesForReveal(board.id),
+    searchParams,
+  ]);
 
   return (
-    <PrintBoard
+    <PrintBook
       board={{
         id: board.id,
         title: board.title,
@@ -56,6 +63,7 @@ async function Print({
         templateId: board.templateId,
       }}
       messages={messages}
+      paper={parsePaper(paper)}
     />
   );
 }
