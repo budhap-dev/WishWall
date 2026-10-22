@@ -3,7 +3,7 @@
 import { LogIn, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { type TouchEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -35,6 +35,7 @@ export function MobileMenu({ user, versionLabel }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const swipe = useSwipeToClose(() => setOpen(false));
 
   return (
     <>
@@ -44,7 +45,11 @@ export function MobileMenu({ user, versionLabel }: Props) {
             <Menu className="size-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[min(20rem,85vw)]">
+        <SheetContent
+          side="right"
+          className="w-[min(20rem,85vw)] touch-pan-y"
+          {...swipe}
+        >
           <SheetHeader>
             <SheetTitle className="text-lg font-semibold">
               <Logo markClassName="size-6" />
@@ -126,4 +131,63 @@ export function MobileMenu({ user, versionLabel }: Props) {
       <SignOutDialog open={confirmSignOut} onOpenChange={setConfirmSignOut} />
     </>
   );
+}
+
+/**
+ * Lets the panel be dragged to the right and let go to close it, like a
+ * phone's own side panels. A short drag springs back; past a third of the
+ * panel (or a quick flick) it closes, sliding on from where the finger left
+ * it. Vertical drags are left alone so the panel still scrolls.
+ */
+function useSwipeToClose(onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    dx: number;
+    horizontal: boolean | null;
+  } | null>(null);
+
+  return {
+    ref,
+    onTouchStart(event: TouchEvent) {
+      const touch = event.touches[0];
+      drag.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: event.timeStamp,
+        dx: 0,
+        horizontal: null,
+      };
+    },
+    onTouchMove(event: TouchEvent) {
+      const d = drag.current;
+      const panel = ref.current;
+      if (!d || !panel) return;
+      const touch = event.touches[0];
+      const dx = touch.clientX - d.x;
+      const dy = touch.clientY - d.y;
+      // Decide once, after a few pixels, whether this is a swipe or a scroll.
+      d.horizontal ??=
+        Math.abs(dx) + Math.abs(dy) > 8 ? Math.abs(dx) > Math.abs(dy) : null;
+      if (!d.horizontal) return;
+      d.dx = Math.max(0, dx);
+      panel.style.transition = "none";
+      panel.style.translate = `${d.dx}px 0`;
+    },
+    onTouchEnd(event: TouchEvent) {
+      const d = drag.current;
+      const panel = ref.current;
+      drag.current = null;
+      if (!d?.horizontal || !panel) return;
+      const flick = d.dx > 40 && event.timeStamp - d.time < 250;
+      if (flick || d.dx > panel.offsetWidth / 3) {
+        onClose();
+      } else {
+        panel.style.transition = "translate 200ms ease-out";
+        panel.style.translate = "";
+      }
+    },
+  };
 }
