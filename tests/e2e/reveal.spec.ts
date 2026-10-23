@@ -118,6 +118,17 @@ test("a swipe turns the page", async ({ page, user }) => {
   const box = (await title.boundingBox())!;
   const y = box.y + box.height / 2;
   const x = box.x + box.width / 2;
+  // A short, slow slide lifts the page but springs back (a quick flick
+  // would turn it)…
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 30, y, { steps: 4 });
+  await page.waitForTimeout(250);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  await expect(page.getByText("Cover", { exact: true })).toBeVisible();
+
+  // …a longer one turns it.
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x - 60, y, { steps: 4 });
