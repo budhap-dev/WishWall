@@ -73,6 +73,9 @@ const MAX_TILT: Record<CardStyle, number> = {
   glass: 0.6,
 };
 
+/** Every card leans at least this share of its style's max, so none sit flat. */
+const MIN_TILT_SHARE = 0.6;
+
 /**
  * A small, stable rotation for a card, as if placed by hand. Derived from
  * the message id so it's the same on every render (no hydration mismatch).
@@ -81,8 +84,13 @@ export function cardTilt(t: TemplateConfig, seed: string): number {
   let hash = 0;
   for (let i = 0; i < seed.length; i++)
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  const unit = ((hash >>> 0) % 1000) / 999; // 0..1
-  return Math.round((unit * 2 - 1) * MAX_TILT[t.cards.style] * 10) / 10;
+  // Mix the bits so direction and amount don't track each other.
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash ^= hash >>> 16;
+  const sign = hash & 1 ? 1 : -1;
+  const unit = ((hash >>> 1) % 1000) / 999; // 0..1
+  const share = MIN_TILT_SHARE + unit * (1 - MIN_TILT_SHARE);
+  return Math.round(sign * share * MAX_TILT[t.cards.style] * 10) / 10;
 }
 
 /**
