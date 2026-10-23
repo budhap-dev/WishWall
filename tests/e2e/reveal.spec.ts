@@ -5,9 +5,12 @@ type Page = import("@playwright/test").Page;
 const open = (page: Page) =>
   page.getByRole("button", { name: /Open your card for Maya/ }).click();
 
-/** Close the book and go to the wall of every card. */
-const seeAll = (page: Page) =>
-  page.getByRole("button", { name: "See all", exact: true }).click();
+/** Read the book page by page to the end, then go to the wall of every card. */
+async function readThrough(page: Page, messages: number) {
+  await page.getByRole("button", { name: "Start reading" }).click();
+  for (let i = 0; i < messages; i++) await page.keyboard.press("ArrowRight");
+  await page.getByRole("button", { name: "See all messages" }).click();
+}
 
 test("the recipient opens the card and sees every visible message", async ({
   page,
@@ -32,12 +35,17 @@ test("the recipient opens the card and sees every visible message", async ({
   const title = page.getByRole("heading", { name: "Happy Birthday, Maya!" });
   await expect(title).toBeVisible();
   await expect(title).toBeFocused();
-  await expect(page.getByText("2 messages from 2 people")).toBeVisible();
+  await expect(page.getByText("2 messages inside")).toBeVisible();
   await expect(page.getByRole("article")).toHaveCount(0);
+  // No skipping ahead before reading.
+  await expect(
+    page.getByRole("button", { name: "See all", exact: true }),
+  ).toHaveCount(0);
 
-  // …and the wall shows every card.
-  await seeAll(page);
+  // …and after the last page, the wall shows every card.
+  await readThrough(page, 2);
   await expect(title).toBeFocused();
+  await expect(page.getByText("2 messages from 2 people")).toBeVisible();
   await expect(page.getByRole("article")).toHaveCount(2);
   await expect(
     page.getByRole("article").filter({ hasText: "Priya" }).locator("strong"),
@@ -87,8 +95,11 @@ test("messages turn like the pages of a book, then show all at once", async ({
   await expect(page.getByRole("article")).toHaveCount(2);
 
   // And back to the book from the wall.
+  // And back to the book from the wall, which may now skip ahead.
   await page.getByRole("button", { name: "Read as a book" }).click();
   await expect(page.getByText("Cover", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "See all", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
 });
 
 test("a swipe turns the page", async ({ page, user }) => {
@@ -99,6 +110,10 @@ test("a swipe turns the page", async ({ page, user }) => {
   // Wait for the opener to finish (it hands focus to the cover's title).
   const title = page.getByRole("heading", { name: "Happy Birthday, Maya!" });
   await expect(title).toBeFocused();
+  // …and the card to finish coming out of the envelope.
+  await page
+    .getByRole("button", { name: "Start reading" })
+    .click({ trial: true });
 
   const box = (await title.boundingBox())!;
   const y = box.y + box.height / 2;
@@ -135,7 +150,7 @@ test("cards enlarge, and arrow keys move between them", async ({
   ]);
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await open(page);
-  await seeAll(page);
+  await readThrough(page, 3);
 
   await page.getByRole("button", { name: "Read Ben's message" }).click();
   const dialog = page.getByRole("dialog", { name: "Message from Ben" });
@@ -190,7 +205,7 @@ test("large boards load more cards as you scroll", async ({ page, user }) => {
   );
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await open(page);
-  await seeAll(page);
+  await readThrough(page, total);
   await expect(
     page.getByText(`${total} messages from ${total} people`),
   ).toBeVisible();

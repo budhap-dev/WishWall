@@ -126,11 +126,6 @@ export function PrintBook({ board, messages, paper }: Props) {
             >
               {board.title}
             </h1>
-            {board.intro ? (
-              <p className="mt-8 max-w-2xl text-xl leading-relaxed whitespace-pre-line">
-                {board.intro}
-              </p>
-            ) : null}
             <p className="mt-8 text-base opacity-80">
               {boardSummary(
                 messages.map((m) => m.authorName),

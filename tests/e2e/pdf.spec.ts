@@ -16,7 +16,11 @@ test("the recipient downloads the board as a PDF", async ({ page, user }) => {
   ]);
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await page.getByRole("button", { name: /Open your card for Maya/ }).click();
-  await page.getByRole("button", { name: "See all", exact: true }).click();
+  // Read the book to its end page, which offers the wall.
+  await page.getByRole("button", { name: "Start reading" }).click();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.getByRole("button", { name: "See all messages" }).click();
 
   await page.getByRole("button", { name: "Download PDF" }).click();
   // The preview frames the print page and shows its page count once laid out.

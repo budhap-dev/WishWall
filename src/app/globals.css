@@ -249,6 +249,80 @@
   }
 }
 
+/* Cover and end page: the card-colour gradient drifting slowly. */
+.ww-sheen {
+  animation: ww-sheen 14s ease-in-out infinite alternate;
+}
+@keyframes ww-sheen {
+  from {
+    background-position:
+      0 0,
+      0% 50%;
+  }
+  to {
+    background-position:
+      0 0,
+      100% 50%;
+  }
+}
+/* "Start reading" glinting now and then. */
+@keyframes ww-shine {
+  0% {
+    translate: -120% 0;
+  }
+  45%,
+  100% {
+    translate: 420% 0;
+  }
+}
+/* Ornaments pop in (staggered by --d), then bob; bunting drops in, then sways. */
+.ww-bob {
+  animation: ww-bob 3.2s ease-in-out infinite;
+}
+.ww-ornament.ww-bob {
+  animation:
+    ww-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d) backwards,
+    ww-bob var(--dur) ease-in-out var(--d) infinite;
+}
+.ww-ornament.ww-flag {
+  transform-origin: top center;
+  animation:
+    ww-drop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d) backwards,
+    ww-sway var(--dur) ease-in-out infinite;
+}
+@keyframes ww-pop {
+  from {
+    scale: 0;
+    opacity: 0;
+  }
+}
+@keyframes ww-bob {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: -6deg;
+  }
+  50% {
+    translate: 0 -8px;
+    rotate: 6deg;
+  }
+}
+@keyframes ww-drop {
+  from {
+    translate: 0 -30px;
+    opacity: 0;
+  }
+}
+@keyframes ww-sway {
+  0%,
+  100% {
+    rotate: -7deg;
+  }
+  50% {
+    rotate: 7deg;
+  }
+}
+
 /* Unmoving scatter (print cover): placed at --x/--y, turned by --spin. */
 .ww-still {
   top: var(--y);
@@ -256,7 +330,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ww-particle {
+  .ww-particle,
+  .ww-sheen,
+  .ww-bob,
+  .ww-ornament {
     animation: none !important;
   }
 }
