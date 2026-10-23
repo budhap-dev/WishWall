@@ -428,7 +428,10 @@ export function RevealBook({
 /**
  * The top page. Sliding it left lifts it off the spine under the finger (or
  * mouse) and lets go into a full turn, or springs back if it didn't go far;
- * sliding right leans it back toward the previous page.
+ * sliding right leans it back toward the previous page. Everything on the
+ * page only scrolls vertically to touch (`touch-action: pan-y`): a long
+ * message scrolls inside the page, and without it a phone would claim a
+ * sideways swipe on the text for scrolling too.
  */
 function Sheet({
   dir,
@@ -466,7 +469,7 @@ function Sheet({
       initial="enter"
       animate="center"
       exit="exit"
-      className="absolute inset-0 origin-left cursor-grab touch-pan-y select-none active:cursor-grabbing"
+      className="absolute inset-0 origin-left cursor-grab touch-pan-y select-none active:cursor-grabbing [&_*]:touch-pan-y"
       style={{
         rotateY,
         skewY,

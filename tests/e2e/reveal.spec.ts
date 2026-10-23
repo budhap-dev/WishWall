@@ -137,6 +137,40 @@ test("a swipe turns the page", async ({ page, user }) => {
   await expect(page.getByText("Message 1 of 1")).toBeVisible();
 });
 
+test("a finger swipe turns the page on a phone", async ({
+  page,
+  user,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "touch only");
+  const board = await createTestBoard(user.id);
+  await insertMessages(board.id, [
+    { author: "Ann", body: "First message" },
+    { author: "Ben", body: "Second message" },
+  ]);
+  await page.goto(`/board/${board.revealSlug}/reveal`);
+  await open(page);
+  await page.getByRole("button", { name: "Start reading" }).click();
+  await expect(page.getByText("Message 1 of 2")).toBeVisible();
+  await page.waitForTimeout(1200); // let the turn settle
+
+  // Real touch input (not mouse), starting on the message text: the browser
+  // decides here whether the gesture scrolls or reaches the page.
+  const box = (await page.getByText("First message").boundingBox())!;
+  const y = box.y + box.height / 2;
+  const x = box.x + box.width / 2 + 100;
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: "touchStart" | "touchMove" | "touchEnd", px?: number) =>
+    cdp.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: px === undefined ? [] : [{ x: px, y }],
+    });
+  await touch("touchStart", x);
+  for (let i = 1; i <= 10; i++) await touch("touchMove", x - i * 22);
+  await touch("touchEnd");
+  await expect(page.getByText("Message 2 of 2")).toBeVisible();
+});
+
 test("contribute and reveal links can't be swapped", async ({ page, user }) => {
   const board = await createTestBoard(user.id);
   await page.goto(`/board/${board.shareSlug}/reveal`);
