@@ -53,7 +53,6 @@ async function Print({
       board={{
         id: board.id,
         title: board.title,
-        intro: board.intro,
         recipientName: board.recipientName,
         recipientPhotoUrl: imageUrl(board.recipientPhotoKey),
         eventDateLabel: board.eventDate

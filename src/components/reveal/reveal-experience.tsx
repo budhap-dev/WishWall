@@ -27,7 +27,6 @@ export type RevealProps = {
   board: {
     id: string;
     title: string;
-    intro: string | null;
     recipientName: string;
     recipientPhotoUrl: string | null;
     eventDateLabel: string | null;
@@ -55,12 +54,15 @@ export function RevealExperience({
   const [phase, setPhase] = useState<Phase>("closed");
   // With nothing to read yet, there's no book: straight to the (empty) wall.
   const [view, setView] = useState<View>(messages.length > 0 ? "book" : "wall");
+  // Read to the end once: reopening the book can skip straight back.
+  const [readBefore, setReadBefore] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [printing, setPrinting] = useState(false);
   const seed = seedFromString(board.id);
 
   function showWall() {
     window.scrollTo({ top: 0 });
+    setReadBefore(true);
     setView("wall");
   }
 
@@ -106,6 +108,7 @@ export function RevealExperience({
                   template={template}
                   revealSlug={revealSlug}
                   active={phase === "open"}
+                  readBefore={readBefore}
                   onFinish={showWall}
                 />
               ) : (
