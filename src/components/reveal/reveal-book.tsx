@@ -1,7 +1,14 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, LayoutGrid, RotateCcw } from "lucide-react";
-import { AnimatePresence, motion, type Variants } from "motion/react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useTransform,
+  type Variants,
+} from "motion/react";
 import {
   type CSSProperties,
   type ReactNode,
@@ -20,8 +27,9 @@ import { OCCASIONS } from "@/lib/occasions";
 import { cn } from "@/lib/utils";
 import type { MessageView } from "@/server/services/messages";
 import type { TemplateConfig } from "@/templates";
-import { boardSurfaceStyle, headingStyle } from "@/templates/styles";
+import { boardSurfaceStyle, cardStyle, headingStyle } from "@/templates/styles";
 import { DownloadPdfButton } from "./download-pdf-button";
+import { PageDecor } from "./page-decor";
 import type { RevealProps } from "./reveal-experience";
 
 type Props = {
@@ -40,34 +48,35 @@ type Props = {
 type Direction = 1 | -1;
 
 const TURN = {
-  duration: 0.8,
-  ease: [0.645, 0.045, 0.355, 1],
+  duration: 1,
+  ease: [0.45, 0.05, 0.3, 1],
   // Stacking changes at once; only the turn itself is animated.
   zIndex: { duration: 0 },
 } as const;
 
 /**
- * A page turns around its left edge, like a book's. Going forward, the top
- * page swings away and the next one is already waiting underneath; going
- * back, the previous page swings back over the current one.
+ * A page turns over the spine (its left edge) like a book's, showing its
+ * back as it lands on the left. Going forward, the next page is already
+ * waiting underneath; going back, the previous page turns back over the
+ * current one. (No opacity here: it would flatten the page's two faces.)
  */
 const PAGE: Variants = {
   enter: (dir: Direction) =>
     dir > 0
-      ? { rotateY: 0, scale: 0.96, x: 0, opacity: 1, zIndex: 1 }
-      : { rotateY: -100, scale: 1, x: 0, opacity: 1, zIndex: 2 },
-  center: {
-    rotateY: 0,
-    scale: 1,
-    x: 0,
-    opacity: 1,
-    zIndex: 2,
-    transition: TURN,
-  },
+      ? { rotateY: 0, scale: 0.96, zIndex: 1 }
+      : { rotateY: -180, scale: 1, zIndex: 2 },
+  center: { rotateY: 0, scale: 1, zIndex: 2, transition: TURN },
   exit: (dir: Direction) =>
     dir > 0
-      ? { rotateY: -100, x: 0, zIndex: 3, transition: TURN }
-      : { scale: 0.96, opacity: 0, zIndex: 1, transition: TURN },
+      ? { rotateY: -180, zIndex: 3, transition: TURN }
+      : { rotateY: 0, scale: 0.96, zIndex: 1, transition: TURN },
+};
+
+/** The page's back fades away once it has landed on the left. */
+const BACK: Variants = {
+  enter: { opacity: 0 },
+  center: { opacity: 1, transition: { duration: 0.25 } },
+  exit: { opacity: 0, transition: { delay: 0.8, duration: 0.25 } },
 };
 
 /** Shadow across a page as it lifts off, or lies under the turning one. */
@@ -158,6 +167,13 @@ export function RevealBook({
     color: template.colors.accentText,
   };
 
+  function paperColor(i: number): string {
+    if (i === 0 || i === last) return brightScheme(template).colors[0];
+    return String(
+      cardStyle(template, messages[i - 1].cardColor).backgroundColor,
+    );
+  }
+
   function renderPage(i: number): ReactNode {
     if (i === 0) {
       return (
@@ -239,12 +255,21 @@ export function RevealBook({
     }
     const message = messages[i - 1];
     return (
-      <MessageCard
-        message={message}
-        template={template}
-        eagerImage
-        className="absolute inset-0 flex flex-col justify-center-safe overflow-auto overscroll-contain p-7 text-lg sm:p-10 sm:text-xl [&_img]:mx-auto [&_img]:max-h-[38dvh] [&_img]:w-auto"
-      />
+      <>
+        <MessageCard
+          message={message}
+          template={template}
+          eagerImage
+          className="absolute inset-0 flex flex-col justify-center-safe overflow-auto overscroll-contain px-9 py-12 text-lg sm:px-12 sm:text-xl [&_img]:mx-auto [&_img]:max-h-[38dvh] [&_img]:w-auto"
+        />
+        <PageDecor
+          template={template}
+          occasion={board.occasion}
+          seed={message.id}
+          color={String(cardStyle(template, message.cardColor).color)}
+          pageNumber={i}
+        />
+      </>
     );
   }
 
@@ -302,29 +327,32 @@ export function RevealBook({
           ) : null,
         )}
 
-        <AnimatePresence initial={false} custom={dir}>
+        {/* The next page, waiting underneath to be uncovered as this one
+            is slid over. */}
+        {index < last ? (
+          // Settled ("center") at once, decorations and all.
           <motion.div
-            key={index}
-            custom={dir}
-            variants={PAGE}
-            initial="enter"
+            key={index + 1}
+            aria-hidden
+            inert
+            initial={false}
             animate="center"
-            exit="exit"
-            className="absolute inset-0 origin-left cursor-grab active:cursor-grabbing"
-            style={{
-              borderRadius: template.cards.radius,
-              backfaceVisibility: "hidden",
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.35}
-            dragSnapToOrigin
-            onDragEnd={(_, { offset, velocity }) => {
-              if (offset.x < -SWIPE_DISTANCE || velocity.x < -SWIPE_SPEED)
-                turn(1);
-              else if (offset.x > SWIPE_DISTANCE || velocity.x > SWIPE_SPEED)
-                turn(-1);
-            }}
+            className="absolute inset-0 scale-[0.96]"
+            style={{ borderRadius: template.cards.radius }}
+          >
+            {renderPage(index + 1)}
+          </motion.div>
+        ) : null}
+
+        <AnimatePresence initial={false} custom={dir}>
+          <Sheet
+            key={index}
+            dir={dir}
+            radius={template.cards.radius}
+            backColor={paperColor(index)}
+            canForward={index < last}
+            canBack={index > 0}
+            onTurn={turn}
           >
             {renderPage(index)}
             {/* The book's gutter along the spine. */}
@@ -355,7 +383,7 @@ export function RevealBook({
             {index > 0 ? (
               <PageCorner side="left" onClick={() => turn(-1)} />
             ) : null}
-          </motion.div>
+          </Sheet>
         </AnimatePresence>
       </div>
 
@@ -394,6 +422,116 @@ export function RevealBook({
         </span>
       </p>
     </motion.section>
+  );
+}
+
+/**
+ * The top page. Sliding it left lifts it off the spine under the finger (or
+ * mouse) and lets go into a full turn, or springs back if it didn't go far;
+ * sliding right leans it back toward the previous page.
+ */
+function Sheet({
+  dir,
+  radius,
+  backColor,
+  canForward,
+  canBack,
+  onTurn,
+  children,
+}: {
+  dir: Direction;
+  radius: TemplateConfig["cards"]["radius"];
+  /** The paper's colour, for the back of the page. */
+  backColor: string;
+  canForward: boolean;
+  canBack: boolean;
+  onTurn: (delta: Direction) => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  // Shared with the turn animation, so a released slide carries on from
+  // wherever the page was let go.
+  const rotateY = useMotionValue(0);
+  // Paper bends as it turns: the free edge lags, most of all mid-turn.
+  const skewY = useTransform(rotateY, [0, -90, -180], [0, -4, 0]);
+  // Light falls off the front as it lifts, and onto the back as it lands.
+  const frontShade = useTransform(rotateY, [0, -90], [0, 0.55]);
+  const backShade = useTransform(rotateY, [-90, -180], [0.55, 0.08]);
+
+  return (
+    <motion.div
+      ref={ref}
+      custom={dir}
+      variants={PAGE}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      className="absolute inset-0 origin-left cursor-grab touch-pan-y select-none active:cursor-grabbing"
+      style={{
+        rotateY,
+        skewY,
+        borderRadius: radius,
+        transformStyle: "preserve-3d",
+      }}
+      onPan={(_, { offset }) => {
+        const width = ref.current?.offsetWidth || 400;
+        // The page follows the finger over the spine, all the way across.
+        if (offset.x < 0 && canForward)
+          rotateY.set(Math.max(-175, (offset.x / width) * 180));
+        else if (offset.x > 0 && canBack)
+          rotateY.set(Math.min(12, (offset.x / width) * 30));
+      }}
+      onPanEnd={(_, { offset, velocity }) => {
+        if (
+          canForward &&
+          (offset.x < -SWIPE_DISTANCE || velocity.x < -SWIPE_SPEED)
+        )
+          onTurn(1);
+        else if (
+          canBack &&
+          (offset.x > SWIPE_DISTANCE || velocity.x > SWIPE_SPEED)
+        )
+          onTurn(-1);
+        else
+          animate(rotateY, 0, { type: "spring", stiffness: 300, damping: 26 });
+      }}
+    >
+      <div
+        className="absolute inset-0 rounded-[inherit]"
+        style={{ backfaceVisibility: "hidden" }}
+      >
+        {children}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit]"
+          style={{
+            opacity: frontShade,
+            background:
+              "linear-gradient(to left, rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.1) 60%, transparent)",
+          }}
+        />
+      </div>
+      {/* The back of the page: plain paper, seen once it's past the spine. */}
+      <motion.div
+        aria-hidden
+        variants={BACK}
+        className="ww-sheet ww-paper absolute inset-0 rounded-[inherit]"
+        style={{
+          backgroundColor: backColor,
+          transform: "rotateY(180deg)",
+          backfaceVisibility: "hidden",
+        }}
+      >
+        <motion.div
+          className="absolute inset-0 rounded-[inherit]"
+          style={{
+            opacity: backShade,
+            background:
+              "linear-gradient(to left, rgb(0 0 0 / 0.45), transparent 70%)",
+          }}
+        />
+      </motion.div>
+    </motion.div>
   );
 }
 
