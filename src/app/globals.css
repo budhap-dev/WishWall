@@ -212,6 +212,43 @@
   }
 }
 
+/* ── Reveal book (src/components/reveal/reveal-book.tsx) ──────────────────── */
+/* "Start reading" arrow leaning toward the next page. */
+@keyframes ww-nudge {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 4px 0;
+  }
+}
+/* The end page's envelope, beating like a heart. */
+@keyframes ww-beat {
+  0%,
+  40%,
+  100% {
+    scale: 1;
+  }
+  15% {
+    scale: 1.15;
+  }
+  28% {
+    scale: 1.05;
+  }
+}
+/* The cover's corner lifting now and then, as a hint to turn it. */
+@keyframes ww-curl {
+  0%,
+  60%,
+  100% {
+    scale: 1;
+  }
+  75% {
+    scale: 1.6;
+  }
+}
+
 /* Unmoving scatter (print cover): placed at --x/--y, turned by --spin. */
 .ww-still {
   top: var(--y);

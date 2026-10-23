@@ -1,7 +1,13 @@
 import { createTestBoard, expect, insertMessages, test } from "./fixtures";
 
-const open = (page: import("@playwright/test").Page) =>
+type Page = import("@playwright/test").Page;
+
+const open = (page: Page) =>
   page.getByRole("button", { name: /Open your card for Maya/ }).click();
+
+/** Close the book and go to the wall of every card. */
+const seeAll = (page: Page) =>
+  page.getByRole("button", { name: "See all", exact: true }).click();
 
 test("the recipient opens the card and sees every visible message", async ({
   page,
@@ -22,15 +28,87 @@ test("the recipient opens the card and sees every visible message", async ({
   ).toHaveCount(0);
 
   await open(page);
+  // The book opens on its cover…
   const title = page.getByRole("heading", { name: "Happy Birthday, Maya!" });
   await expect(title).toBeVisible();
   await expect(title).toBeFocused();
   await expect(page.getByText("2 messages from 2 people")).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(0);
+
+  // …and the wall shows every card.
+  await seeAll(page);
+  await expect(title).toBeFocused();
   await expect(page.getByRole("article")).toHaveCount(2);
   await expect(
     page.getByRole("article").filter({ hasText: "Priya" }).locator("strong"),
   ).toHaveText("birthday");
   await expect(page.getByText("Hidden by the owner")).toHaveCount(0);
+});
+
+test("messages turn like the pages of a book, then show all at once", async ({
+  page,
+  user,
+}) => {
+  const board = await createTestBoard(user.id);
+  await insertMessages(board.id, [
+    { author: "Ann", body: "First message" },
+    { author: "Ben", body: "Second message" },
+  ]);
+  await page.goto(`/board/${board.revealSlug}/reveal`);
+  await open(page);
+  await expect(page.getByText("Cover", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Start reading" }).click();
+  await expect(page.getByText("Message 1 of 2")).toBeVisible();
+  await expect(
+    page.getByRole("article").filter({ hasText: "First message" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Next page" }).click();
+  await expect(page.getByText("Message 2 of 2")).toBeVisible();
+  await expect(
+    page.getByRole("article").filter({ hasText: "Second message" }),
+  ).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText("Message 1 of 2")).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+
+  // The last page leads to the wall (and the PDF).
+  await expect(page.getByText("The end", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Next page" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Download PDF" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "See all messages" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Happy Birthday, Maya!" }),
+  ).toBeFocused();
+  await expect(page.getByRole("article")).toHaveCount(2);
+
+  // And back to the book from the wall.
+  await page.getByRole("button", { name: "Read as a book" }).click();
+  await expect(page.getByText("Cover", { exact: true })).toBeVisible();
+});
+
+test("a swipe turns the page", async ({ page, user }) => {
+  const board = await createTestBoard(user.id);
+  await insertMessages(board.id, [{ author: "Ann", body: "Swiped to me" }]);
+  await page.goto(`/board/${board.revealSlug}/reveal`);
+  await open(page);
+  // Wait for the opener to finish (it hands focus to the cover's title).
+  const title = page.getByRole("heading", { name: "Happy Birthday, Maya!" });
+  await expect(title).toBeFocused();
+
+  const box = (await title.boundingBox())!;
+  const y = box.y + box.height / 2;
+  const x = box.x + box.width / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 60, y, { steps: 4 });
+  await page.mouse.move(x - 160, y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.getByText("Message 1 of 1")).toBeVisible();
 });
 
 test("contribute and reveal links can't be swapped", async ({ page, user }) => {
@@ -57,6 +135,7 @@ test("cards enlarge, and arrow keys move between them", async ({
   ]);
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await open(page);
+  await seeAll(page);
 
   await page.getByRole("button", { name: "Read Ben's message" }).click();
   const dialog = page.getByRole("dialog", { name: "Message from Ben" });
@@ -87,7 +166,8 @@ test("reduced motion skips the animations", async ({ browser, user }) => {
   const page = await context.newPage();
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await open(page);
-  // No opening sequence: the card is there straight away, fully opaque.
+  // No opening sequence or page turn: each page is there straight away.
+  await page.getByRole("button", { name: "Start reading" }).click();
   const card = page.getByRole("article").filter({ hasText: "Calm and still" });
   await expect(card).toBeVisible({ timeout: 500 });
   await expect(
@@ -110,6 +190,7 @@ test("large boards load more cards as you scroll", async ({ page, user }) => {
   );
   await page.goto(`/board/${board.revealSlug}/reveal`);
   await open(page);
+  await seeAll(page);
   await expect(
     page.getByText(`${total} messages from ${total} people`),
   ).toBeVisible();
